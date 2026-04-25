@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ros2probe · Non-intrusive Observability for ROS 2</title>
+<meta name="description" content="ros2probe: passive, kernel-selective observability for ROS 2. No middleware participants, no process restarts, no Observer Effect. DDS today, Zenoh planned." />
+<style>
+  :root,
+  :root[data-theme="dark"] {
+    --bg: #0a0f1a;
+    --bg-soft: #0e1626;
+    --surface: #111a2c;
+    --surface-2: #172135;
+    --line: #24304a;
+    --line-soft: #1b2539;
+    --text: #e7ecf3;
+    --text-dim: #9aa6ba;
+    --text-mute: #6b7690;
+    --accent: #22d3ee;
+    --accent-2: #7dd3fc;
+    --accent-soft: rgba(34, 211, 238, 0.12);
+    --accent-hover: #67e8f9;
+    --grad-mid: #a5f3fc;
+    --grad-end: #7dd3fc;
+    --warn: #fbbf24;
+    --ok: #34d399;
+    --danger: #f87171;
+    --hero-glow-1: rgba(34, 211, 238, 0.08);
+    --hero-glow-2: rgba(125, 211, 252, 0.06);
+    --code-fn: #a5f3fc;
+    --code-st: #fbbf77;
+    --nav-bg: rgba(10, 15, 26, 0.78);
+    --btn-text: #041018;
+    --shadow-lg: 0 30px 80px rgba(0, 0, 0, 0.4);
+    --shadow-toast: 0 20px 50px rgba(0, 0, 0, 0.5);
+  }
+
+  :root[data-theme="light"] {
+    --bg: #f8fafc;
+    --bg-soft: #f1f5f9;
+    --surface: #ffffff;
+    --surface-2: #e2e8f0;
+    --line: #cbd5e1;
+    --line-soft: #e2e8f0;
+    --text: #0f172a;
+    --text-dim: #475569;
+    --text-mute: #64748b;
+    --accent: #0891b2;
+    --accent-2: #0284c7;
+    --accent-soft: rgba(8, 145, 178, 0.10);
+    --accent-hover: #0e7490;
+    --grad-mid: #06b6d4;
+    --grad-end: #0284c7;
+    --warn: #d97706;
+    --ok: #059669;
+    --danger: #dc2626;
+    --hero-glow-1: rgba(8, 145, 178, 0.05);
+    --hero-glow-2: rgba(2, 132, 199, 0.04);
+    --code-fn: #0e7490;
+    --code-st: #b45309;
+    --nav-bg: rgba(248, 250, 252, 0.88);
+    --btn-text: #ffffff;
+    --shadow-lg: 0 20px 50px rgba(15, 23, 42, 0.08);
+    --shadow-toast: 0 16px 40px rgba(15, 23, 42, 0.15);
+  }
+
+  :root {
+    --mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    --sans: "Inter", "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    --radius-lg: 16px;
+    --radius-md: 10px;
+    --radius-sm: 6px;
+    --max: 1200px;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(1100px 600px at 80% -10%, var(--hero-glow-1), transparent 60%),
+      radial-gradient(900px 500px at -10% 20%, var(--hero-glow-2), transparent 55%);
+    background-attachment: fixed;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  a { color: var(--accent-2); text-decoration: none; }
+  a:hover { color: var(--accent); }
+  code, kbd, pre { font-family: var(--mono); }
+  ::selection { background: var(--accent-soft); color: var(--text); }
+
+  /* Layout */
+  .container { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+  section { padding: 96px 0; border-top: 1px solid var(--line-soft); }
+  section:first-of-type { border-top: none; }
+
+  /* Nav */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(12px);
+    background: var(--nav-bg);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px; max-width: var(--max); margin: 0 auto; padding: 0 24px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-weight: 600; letter-spacing: -0.01em;
+  }
+  .logo-mark {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: linear-gradient(135deg, var(--accent), #0ea5e9);
+    display: grid; place-items: center; font-size: 13px; color: #041018; font-weight: 700;
+  }
+  .nav-links { display: flex; gap: 28px; font-size: 14px; color: var(--text-dim); }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta {
+    font-family: var(--mono); font-size: 13px; padding: 8px 14px;
+    border: 1px solid var(--line); border-radius: 999px; color: var(--text);
+  }
+  .nav-cta:hover { border-color: var(--accent); color: var(--accent); }
+  .nav-right { display: flex; align-items: center; gap: 10px; }
+  .theme-toggle {
+    width: 34px; height: 34px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line); border-radius: 999px;
+    background: transparent; color: var(--text-dim);
+    cursor: pointer; font-size: 15px; line-height: 1;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .theme-toggle .icon-sun, .theme-toggle .icon-moon { display: none; }
+  :root[data-theme="dark"] .theme-toggle .icon-sun { display: inline; }
+  :root[data-theme="light"] .theme-toggle .icon-moon { display: inline; }
+
+  /* Hero */
+  .hero { padding: 88px 0 64px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--accent); padding: 6px 12px; border: 1px solid var(--accent-soft);
+    border-radius: 999px; background: var(--accent-soft);
+  }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+  h1.headline {
+    font-size: clamp(40px, 6vw, 68px);
+    line-height: 1.05; letter-spacing: -0.02em;
+    margin: 20px 0 18px; font-weight: 700;
+    text-wrap: balance;
+  }
+  h1.headline .grad {
+    background: linear-gradient(135deg, var(--accent) 10%, var(--grad-mid) 50%, var(--grad-end) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .subhead {
+    font-size: clamp(16px, 1.3vw, 19px); color: var(--text-dim);
+    max-width: 980px; line-height: 1.55;
+    text-wrap: pretty;
+  }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 20px; border-radius: 10px; font-weight: 500; font-size: 15px;
+    border: 1px solid transparent; transition: transform .1s ease, border-color .2s, background .2s;
+  }
+  .btn-primary { background: var(--accent); color: var(--btn-text); }
+  .btn-primary:hover { background: var(--accent-hover); color: var(--btn-text); }
+  .btn-ghost { border-color: var(--line); color: var(--text); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+  /* Meta row */
+  .meta {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px; margin-top: 44px; padding: 20px;
+    border: 1px solid var(--line-soft); border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, rgba(23,33,53,0.6), rgba(17,26,44,0.2));
+  }
+  .meta-item .k { font-family: var(--mono); font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.08em; }
+  .meta-item .v { margin-top: 4px; font-size: 15px; color: var(--text); }
+
+  /* Hero media */
+  .hero-media {
+    margin-top: 56px;
+    border: 1px solid var(--line); border-radius: var(--radius-lg);
+    overflow: hidden; background: var(--surface);
+    box-shadow: var(--shadow-lg);
+  }
+  .placeholder {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; color: var(--text-mute); font-family: var(--mono); font-size: 13px;
+    background:
+      linear-gradient(rgba(34,211,238,0.04), rgba(34,211,238,0.02)),
+      repeating-linear-gradient(45deg, var(--surface) 0 12px, var(--surface-2) 12px 24px);
+    border: 1px dashed var(--line);
+  }
+  .placeholder .big {
+    font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim);
+  }
+  .placeholder-hero { aspect-ratio: 16/9; }
+  .placeholder-video { aspect-ratio: 16/9; position: relative; }
+  .placeholder-video::after {
+    content: "▶"; position: absolute; width: 64px; height: 64px;
+    background: rgba(34,211,238,0.12); border: 1px solid var(--accent);
+    border-radius: 50%; display: grid; place-items: center; color: var(--accent); font-size: 22px;
+  }
+  .placeholder-screen { aspect-ratio: 16/10; }
+  .placeholder-img { aspect-ratio: 4/3; }
+
+  /* Real media (img / video) — same shapes as the placeholders so they slot in. */
+  .media {
+    display: block; width: 100%; height: 100%;
+    object-fit: cover; background: var(--bg-soft);
+  }
+  .media-frame {
+    display: block; width: 100%;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--bg-soft);
+  }
+  .media-hero   { aspect-ratio: 16/9; }
+  .media-video  { aspect-ratio: 16/9; }
+  .media-screen { aspect-ratio: 16/10; }
+
+  /* Sections */
+  .section-head { margin-bottom: 40px; }
+  .section-head .kicker {
+    font-family: var(--mono); font-size: 12px; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.12em;
+  }
+  .section-head h2 {
+    font-size: clamp(28px, 3.2vw, 40px); margin: 12px 0 16px;
+    letter-spacing: -0.01em; line-height: 1.15; font-weight: 700;
+    /* no max-width and no balance — let greedy wrap handle this at full container width,
+       &nbsp; in the copy keeps semantic tokens like "ROS 2" together */
+  }
+  .section-head p {
+    color: var(--text-dim); font-size: 17px; margin: 0;
+    max-width: 820px; text-wrap: pretty;
+  }
+
+  /* Problem cards */
+  .problem-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+  }
+  @media (max-width: 880px) { .problem-grid { grid-template-columns: 1fr; } }
+  .problem {
+    padding: 24px; border: 1px solid var(--line-soft); border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, var(--surface), var(--bg-soft));
+  }
+  .problem .no {
+    font-family: var(--mono); font-size: 13px; color: var(--danger);
+    border: 1px solid rgba(248,113,113,0.3); padding: 4px 10px; border-radius: 999px;
+    display: inline-block; margin-bottom: 14px;
+  }
+  .problem h3 { margin: 0 0 8px; font-size: 18px; letter-spacing: -0.01em; text-wrap: balance; }
+  .problem p { margin: 0; color: var(--text-dim); font-size: 14.5px; text-wrap: pretty; }
+
+  /* Contributions */
+  .contrib-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px;
+  }
+  @media (max-width: 880px) { .contrib-grid { grid-template-columns: 1fr; } }
+  .contrib {
+    padding: 28px; border: 1px solid var(--line-soft); border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, var(--surface), var(--bg-soft));
+    position: relative;
+  }
+  .contrib .tag {
+    position: absolute; top: 22px; right: 22px;
+    font-family: var(--mono); font-size: 12px; color: var(--accent);
+    background: var(--accent-soft); padding: 4px 10px; border-radius: 6px;
+  }
+  .contrib h3 { margin: 0 0 10px; font-size: 20px; letter-spacing: -0.01em; padding-right: 56px; text-wrap: balance; }
+  .contrib p { margin: 0; color: var(--text-dim); font-size: 15px; text-wrap: pretty; }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 4px; border-bottom: 1px solid var(--line-soft);
+    margin-bottom: 32px; overflow-x: auto; scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 14px 20px; font-family: var(--mono); font-size: 13px;
+    color: var(--text-mute); background: none; border: none; cursor: pointer;
+    border-bottom: 2px solid transparent; white-space: nowrap;
+    letter-spacing: 0.02em; transition: all .15s ease;
+  }
+  .tab:hover { color: var(--text); }
+  .tab[aria-selected="true"] {
+    color: var(--accent); border-bottom-color: var(--accent);
+  }
+  .tab-panel { display: none; }
+  .tab-panel[data-active] { display: block; animation: fadein .25s ease; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  /* Architecture diagram */
+  .arch-wrap { display: grid; grid-template-columns: 1.1fr 1fr; gap: 32px; align-items: center; }
+  @media (max-width: 960px) { .arch-wrap { grid-template-columns: 1fr; } }
+  .arch-diagram {
+    border: 1px solid var(--line); border-radius: var(--radius-md);
+    padding: 28px; background: var(--bg-soft);
+    font-family: var(--mono); font-size: 12px; line-height: 1.65;
+    color: var(--text-dim); overflow-x: auto; white-space: pre;
+  }
+  .arch-diagram .hl { color: var(--accent); }
+  .arch-layers { display: flex; flex-direction: column; gap: 12px; }
+  .arch-layer {
+    padding: 16px 20px; border: 1px solid var(--line-soft); border-radius: var(--radius-md);
+    background: var(--surface);
+  }
+  .arch-layer .lvl {
+    font-family: var(--mono); font-size: 11px; color: var(--accent);
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .arch-layer h4 { margin: 4px 0 6px; font-size: 15px; font-weight: 600; text-wrap: balance; }
+  .arch-layer p { margin: 0; color: var(--text-dim); font-size: 13.5px; text-wrap: pretty; }
+
+  /* Feature grid */
+  .feature-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  }
+  @media (max-width: 960px) { .feature-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px) { .feature-grid { grid-template-columns: 1fr; } }
+  .feature {
+    padding: 20px; border: 1px solid var(--line-soft); border-radius: var(--radius-md);
+    background: var(--surface);
+  }
+  .feature .icon {
+    width: 36px; height: 36px; border-radius: 9px;
+    background: var(--accent-soft); display: grid; place-items: center;
+    color: var(--accent); margin-bottom: 14px; font-size: 16px; font-family: var(--mono);
+    font-weight: 600;
+  }
+  .feature h4 { margin: 0 0 6px; font-size: 15px; text-wrap: balance; }
+  .feature p { margin: 0; color: var(--text-dim); font-size: 13.5px; text-wrap: pretty; }
+
+  /* Code blocks */
+  pre.code {
+    background: var(--bg-soft); border: 1px solid var(--line-soft);
+    border-radius: var(--radius-md); padding: 18px 20px;
+    overflow-x: auto; font-size: 13.5px; line-height: 1.7;
+    color: var(--text);
+  }
+  pre.code .cm { color: var(--text-mute); }
+  pre.code .kw { color: var(--accent); }
+  pre.code .st { color: var(--code-st); }
+  pre.code .fn { color: var(--code-fn); }
+  .inline-code {
+    font-family: var(--mono); font-size: 0.88em;
+    background: var(--surface-2); padding: 1px 7px; border-radius: 4px;
+    border: 1px solid var(--line-soft); color: var(--accent-2);
+  }
+
+  /* Table */
+  table.matrix {
+    width: 100%; border-collapse: collapse; font-size: 14px;
+    border: 1px solid var(--line-soft); border-radius: var(--radius-md); overflow: hidden;
+  }
+  table.matrix th, table.matrix td {
+    padding: 12px 14px; border-bottom: 1px solid var(--line-soft);
+    text-align: left; vertical-align: top;
+  }
+  table.matrix th {
+    font-family: var(--mono); font-size: 12px; color: var(--text-mute);
+    text-transform: uppercase; letter-spacing: 0.08em; background: var(--bg-soft);
+    font-weight: 500;
+  }
+  table.matrix td.ok { color: var(--ok); text-align: center; }
+  table.matrix td.no { color: var(--danger); text-align: center; }
+  table.matrix td.maybe { color: var(--warn); text-align: center; }
+  table.matrix tbody tr:last-child td { border-bottom: none; }
+  table.matrix tbody tr:hover { background: var(--surface); }
+
+  /* Paper / citation block */
+  .paper {
+    display: grid; grid-template-columns: 1.4fr 1fr; gap: 32px; align-items: start;
+  }
+  @media (max-width: 960px) { .paper { grid-template-columns: 1fr; } }
+  .paper-meta { padding: 24px; border: 1px solid var(--line-soft); border-radius: var(--radius-md); background: var(--surface); }
+  .paper-meta .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line-soft); font-size: 14px; }
+  .paper-meta .row:last-child { border-bottom: none; }
+  .paper-meta .k { color: var(--text-mute); font-family: var(--mono); font-size: 12px; }
+  .paper-meta .v { color: var(--text); }
+
+  .abstract {
+    padding: 28px; border: 1px solid var(--line-soft); border-radius: var(--radius-md);
+    background: linear-gradient(180deg, var(--surface), var(--bg-soft));
+    font-size: 15.5px; line-height: 1.75; color: var(--text-dim);
+    text-wrap: pretty;
+  }
+  .abstract strong { color: var(--text); font-weight: 600; }
+
+  /* Experiment strip */
+  .exp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 960px) { .exp-grid { grid-template-columns: 1fr; } }
+  .exp {
+    padding: 22px; border: 1px solid var(--line-soft); border-radius: var(--radius-md);
+    background: var(--surface);
+  }
+  .exp .ex-no {
+    font-family: var(--mono); font-size: 11px; color: var(--accent);
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .exp h4 { margin: 6px 0 10px; font-size: 16px; text-wrap: balance; }
+  .exp p { margin: 0; color: var(--text-dim); font-size: 13.5px; text-wrap: pretty; }
+  .exp .vs {
+    margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line-soft);
+    font-family: var(--mono); font-size: 12px; color: var(--text-mute);
+  }
+
+  /* Gallery — single column so screenshots render at full container width
+     instead of being shrunk into 3 small tiles. */
+  .gallery {
+    display: grid; grid-template-columns: 1fr; gap: 24px;
+  }
+
+  /* Citation box */
+  .cite {
+    background: var(--bg-soft); border: 1px solid var(--line-soft);
+    border-radius: var(--radius-md); padding: 20px 24px;
+    font-family: var(--mono); font-size: 13px; line-height: 1.7;
+    color: var(--text-dim); position: relative; overflow-x: auto;
+  }
+  .cite-copy {
+    position: absolute; top: 14px; right: 14px;
+    padding: 6px 12px; font-size: 11px; font-family: var(--mono);
+    border: 1px solid var(--line); border-radius: 6px;
+    background: var(--surface); color: var(--text-dim); cursor: pointer;
+  }
+  .cite-copy:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Generic code-block copy button */
+  .code-wrap { position: relative; }
+  .code-copy {
+    position: absolute; top: 10px; right: 10px; z-index: 2;
+    padding: 6px 12px; font-size: 11px; font-family: var(--mono);
+    border: 1px solid var(--line); border-radius: 6px;
+    background: var(--surface); color: var(--text-dim); cursor: pointer;
+  }
+  .code-copy:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Footer */
+  footer {
+    padding: 56px 0 40px; border-top: 1px solid var(--line-soft); margin-top: 40px;
+    color: var(--text-mute); font-size: 14px;
+  }
+  .footer-grid {
+    display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 32px;
+  }
+  @media (max-width: 880px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+  footer h5 { margin: 0 0 14px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text); font-family: var(--mono); }
+  footer ul { list-style: none; padding: 0; margin: 0; }
+  footer li { margin-bottom: 8px; }
+  footer a { color: var(--text-dim); }
+  footer a:hover { color: var(--accent); }
+  .copy { padding-top: 24px; border-top: 1px solid var(--line-soft); font-family: var(--mono); font-size: 12px; color: var(--text-mute); }
+
+  /* Utility */
+  .spacer { height: 40px; }
+  hr.sep { border: none; border-top: 1px solid var(--line-soft); margin: 28px 0; }
+  .badge {
+    display: inline-block; font-family: var(--mono); font-size: 11px;
+    padding: 3px 8px; border-radius: 4px; margin-right: 6px;
+    background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--line-soft);
+  }
+  .badge.ok { color: var(--ok); border-color: rgba(52,211,153,0.3); }
+  .badge.warn { color: var(--warn); border-color: rgba(251,191,36,0.3); }
+  .badge.info { color: var(--accent); border-color: rgba(34,211,238,0.3); }
+
+  /* Coming Soon toast */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--surface-2); border: 1px solid var(--accent);
+    color: var(--text); padding: 14px 20px; border-radius: 10px;
+    font-size: 14px; font-family: var(--sans); z-index: 100;
+    box-shadow: var(--shadow-toast);
+    opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+  .toast .tag-soon {
+    font-family: var(--mono); font-size: 11px; padding: 3px 8px;
+    background: var(--accent-soft); color: var(--accent); border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .toast strong { color: var(--text); font-weight: 600; }
+  [data-soon] { cursor: pointer; }
+</style>
+<script>
+  // Run before paint to avoid a flash. Default = dark; light is opt-in and persisted.
+  (function () {
+    try {
+      var saved = localStorage.getItem('ros2probe-theme');
+      document.documentElement.setAttribute('data-theme', saved === 'light' ? 'light' : 'dark');
+    } catch (_) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  })();
+</script>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="logo">
+      <span class="logo-mark">rp</span>
+      <span>ros2probe</span>
+    </div>
+    <div class="nav-links">
+      <a href="#overview">Overview</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#paper">Paper</a>
+      <a href="#usage">Usage</a>
+      <a href="#install">Install</a>
+    </div>
+    <div class="nav-right">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle light / dark theme" title="Toggle theme">
+        <span class="icon-sun" aria-hidden="true">☀</span>
+        <span class="icon-moon" aria-hidden="true">☾</span>
+      </button>
+      <a class="nav-cta" href="https://github.com/DGIST-CSILAB/ros2probe" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <span class="eyebrow"><span class="dot"></span>Middleware-agnostic · DDS today · Zenoh planned</span>
+    <h1 class="headline"><span class="grad">ros2probe</span>: Observe ROS&nbsp;2 without being observed.</h1>
+    <p class="subhead">
+      ros2probe is a middleware-level observability layer for ROS&nbsp;2. It taps wire traffic from the kernel network path, never creates a middleware participant, and reconstructs the full ROS graph, topic metrics, and message streams entirely in userspace. DDS is supported today. Zenoh is planned.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#usage">Get started →</a>
+      <a class="btn btn-ghost" href="#" data-soon="Paper">Read the paper</a>
+      <a class="btn btn-ghost" href="https://github.com/DGIST-CSILAB/ros2probe" target="_blank" rel="noopener">View on GitHub ↗</a>
+    </div>
+
+    <div class="meta">
+      <div class="meta-item">
+        <div class="k">Approach</div>
+        <div class="v">Participant-free wire tap</div>
+      </div>
+      <div class="meta-item">
+        <div class="k">Network overhead</div>
+        <div class="v">Zero bandwidth at steady state</div>
+      </div>
+      <div class="meta-item">
+        <div class="k">Process restart</div>
+        <div class="v">Not required</div>
+      </div>
+      <div class="meta-item">
+        <div class="k">Supported</div>
+        <div class="v">DDS (incl. Fast · Cyclone)<span style="display:block; color: var(--text-mute); font-size: 12px; margin-top: 2px;">Zenoh planned</span></div>
+      </div>
+      <div class="meta-item">
+        <div class="k">License</div>
+        <div class="v">Apache-2.0<span style="display:block; color: var(--text-mute); font-size: 12px; margin-top: 2px;">eBPF: GPL-2.0 OR Apache-2.0</span></div>
+      </div>
+    </div>
+
+    <div class="hero-media">
+      <video class="media media-hero" autoplay muted loop playsinline preload="metadata"
+             aria-label="ros2probe GUI animated demo">
+        <source src="assets/hero.webm" type="video/webm" />
+      </video>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section id="overview">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">The problem</span>
+      <h2>Observability tools for ROS&nbsp;2 are themselves observed.</h2>
+      <p>Existing graph, CLI, and recording tools all join the middleware graph. They perturb the very properties engineers are trying to measure.</p>
+    </div>
+
+    <div class="problem-grid">
+      <div class="problem">
+        <span class="no">Problem 01</span>
+        <h3>ros2 daemon</h3>
+        <p>Runs as a middleware participant to cache the graph, continuously participating in discovery. Contributes to <em>O(N²)</em> discovery traffic and exhibits graph-state inconsistency when nodes crash or networks partition.</p>
+      </div>
+      <div class="problem">
+        <span class="no">Problem 02</span>
+        <h3>ros2 topic hz / echo / bw</h3>
+        <p>Creates a new subscriber just to observe. Triggers QoS negotiation, injects receive-side load, and appears in <span class="inline-code">ros2 topic list</span>. The act of measurement deforms the system.</p>
+      </div>
+      <div class="problem">
+        <span class="no">Problem 03</span>
+        <h3>rosbag2</h3>
+        <p>Registers as a full middleware participant with subscribers for every recorded topic. Observation and storage cannot be separated. Under constrained links the recorder itself starves the control plane.</p>
+      </div>
+    </div>
+
+    <hr class="sep" />
+
+    <div class="section-head" style="margin-top: 48px;">
+      <span class="kicker">Our approach</span>
+      <h2>A participant-free wire tap with adaptive visibility.</h2>
+      <p>ros2probe sits outside the middleware runtime. It reads wire frames at the kernel network path, filters them on a session-driven endpoint whitelist, and falls back gracefully when IP fragmentation or shared-memory transports get in the way. Today we parse the RTPS wire format for DDS; the same architecture will absorb the Zenoh wire format as a parser plug-in.</p>
+    </div>
+
+    <div class="contrib-grid">
+      <div class="contrib">
+        <span class="tag">C1</span>
+        <h3>Non-intrusive Observation</h3>
+        <p>Passive Observer architecture. No middleware participant is created at steady state. Logical topology integrity is preserved. Discovery, QoS negotiation, and data-plane load are untouched.</p>
+      </div>
+      <div class="contrib">
+        <span class="tag">C2</span>
+        <h3>Adaptive Kernel-side Selectivity</h3>
+        <p>Session-level topic interest compiles into a kernel filter. In fragmentation-avoided deployments: perfect per-packet selectivity. Otherwise: a fragment-aware fallback that preserves correctness without assuming any specific middleware configuration.</p>
+      </div>
+      <div class="contrib">
+        <span class="tag">C3</span>
+        <h3>Discovery Race-free Selectivity</h3>
+        <p>Data-centric, event-driven GID synchronisation: each SEDP announcement immediately updates the kernel whitelist. RTPS protocol ordering guarantees the GID is registered before any DATA can arrive, eliminating races without a time-based window.</p>
+      </div>
+      <div class="contrib">
+        <span class="tag">C4</span>
+        <h3>Adaptive Visibility</h3>
+        <p>The main observer stays zero-participant. When the user explicitly observes a shared-memory topic, ros2probe spawns a short-lived, namespace-isolated subprocess that joins the DDS domain only inside its mount namespace — the runtime itself never becomes a middleware participant.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MAIN TABS -->
+<section id="architecture">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">How it works</span>
+      <h2>Architecture, features, and the research behind it.</h2>
+      <p>Switch between tabs for the layered architecture, the feature surface, live demos, and the paper.</p>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="arch" aria-selected="true">01 · Architecture</button>
+      <button class="tab" role="tab" data-tab="features" aria-selected="false">02 · Features</button>
+      <button class="tab" role="tab" data-tab="demo" aria-selected="false">03 · Live Demo</button>
+      <button class="tab" role="tab" data-tab="compare" aria-selected="false">04 · vs Other Tools</button>
+      <button class="tab" role="tab" data-tab="paper" aria-selected="false">05 · Research</button>
+      <button class="tab" role="tab" data-tab="experiments" aria-selected="false">06 · Experiments</button>
+    </div>
+
+    <!-- TAB: Architecture -->
+    <div class="tab-panel" data-tab="arch" data-active>
+      <p style="color: var(--text-dim); max-width: 820px; margin: 0 0 24px;">Every other ROS&nbsp;2 observability tool attaches somewhere <em>inside</em> the application stack: rclcpp, rcl, rmw, or the middleware itself. ros2probe is the only layer that sits <em>below</em> the middleware, in the kernel network path.</p>
+
+      <div class="arch-wrap">
+        <!-- LEFT: stack view, showing where each tool attaches -->
+        <div>
+          <div style="font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px;">Attachment view · where each tool hooks</div>
+          <div class="arch-diagram" style="font-size: 11.5px; line-height: 1.7;"><span class="hl">┌────────────────────────────────────────────┐</span>
+<span class="hl">│</span>  <span class="hl">ROS 2 application</span>                         <span class="hl">│</span>
+<span class="hl">│</span>  (your nodes, callbacks, lifecycle)        <span class="hl">│</span>
+<span class="hl">├────────────────────────────────────────────┤</span>
+<span class="hl">│</span>  rclcpp / rclpy       &lt;-- ros2_tracing     <span class="hl">│</span>
+<span class="hl">│</span>  rcl                  &lt;-- ros2_tracing     <span class="hl">│</span>
+<span class="hl">├────────────────────────────────────────────┤</span>
+<span class="hl">│</span>  rmw abstraction      &lt;-- CARET            <span class="hl">│</span>
+<span class="hl">├────────────────────────────────────────────┤</span>
+<span class="hl">│</span>  Middleware runtime                        <span class="hl">│</span>
+<span class="hl">│</span>  (FastDDS, CycloneDDS ...)                 <span class="hl">│</span>
+<span class="hl">│</span>    participants / readers / writers        <span class="hl">│</span>
+<span class="hl">│</span>                       &lt;-- ros2 topic echo  <span class="hl">│</span>
+<span class="hl">│</span>                           rosbag2          <span class="hl">│</span>
+<span class="hl">│</span>                           ddsrecorder      <span class="hl">│</span>
+<span class="hl">│</span>                           FastDDS Stats    <span class="hl">│</span>
+<span class="hl">├────────────────────────────────────────────┤</span>
+<span class="hl">│</span>  Wire protocol                             <span class="hl">│</span>
+<span class="hl">│</span>  RTPS  (Zenoh: planned)                    <span class="hl">│</span>
+<span class="hl">├────────────────────────────────────────────┤</span>
+<span class="hl">│</span>  Kernel network stack                      <span class="hl">│</span>
+<span class="hl">│</span>  UDP / IPv4 / IPv6 / NIC                   <span class="hl">│</span>
+<span class="hl">│</span>                                            <span class="hl">│</span>
+<span class="hl">│</span>    <span class="hl">eBPF socket filter</span>  &lt;-- <span class="hl">ros2probe</span>       <span class="hl">│</span>
+<span class="hl">│</span>    zero-copy ring buf                      <span class="hl">│</span>
+<span class="hl">└────────────────────────────────────────────┘</span>
+
+  Every other tool  =  <span class="hl">inline attachment</span>
+  ros2probe         =  <span class="hl">out-of-band tap</span></div>
+        </div>
+
+        <!-- RIGHT: runtime view with side-by-side normal ROS 2 stack vs ros2probe observer -->
+        <div>
+          <div style="font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px;">Runtime view · it COPIES, it does not STEAL</div>
+          <div class="arch-diagram" style="font-size: 11.5px; line-height: 1.65;"> <span class="hl">ROS 2 normal flow</span>          <span class="hl">ros2probe observer</span>
+ (nothing changes)          (reads a copy)
+
+ ┌───────────────┐          ┌───────────────┐
+ │ Node A (sub)  │          │ rp CLI / gui  │
+ │ receives      │          │ shows         │
+ │ normally      │          │ live state    │
+ └───────┬───────┘          └───────┬───────┘
+         ▲                          ▲
+ ┌───────┴───────┐          ┌───────┴───────┐
+ │ Middleware    │          │ ros2probe     │
+ │ (FastDDS...)  │          │ daemon        │
+ └───────┬───────┘          └───────┬───────┘
+         ▲                          ▲
+ ┌───────┴───────┐          ┌───────┴───────┐
+ │ Kernel socket │          │ eBPF filter   │
+ │ duplicates    ├──<span class="hl">copies</span>─▶│ reads a copy  │
+ └───────┬───────┘          └───────────────┘
+         ▲
+ ┌───────┴───────┐       The kernel duplicates
+ │ NIC / wire    │       the sk_buff. One copy
+ │ (unchanged)   │       follows the normal path
+ └───────┬───────┘       down to the NIC. Another
+         ▲               copy is handed to the
+ ┌───────┴───────┐       eBPF filter. ros2probe
+ │ Node B (pub)  │       never removes or modifies
+ └───────────────┘       the original packet.
+          </div>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px;">
+        <div class="arch-layer">
+          <div class="lvl">The others · inline</div>
+          <h4>Attach inside the stack</h4>
+          <p>ros2_tracing adds tracepoints in rclcpp / rcl. CARET wraps rmw with LD_PRELOAD. rosbag2, ros2 topic echo, ddsrecorder, and FastDDS Statistics all create endpoints in the middleware itself. Each becomes part of the stack being observed.</p>
+        </div>
+        <div class="arch-layer">
+          <div class="lvl">ros2probe · out of band</div>
+          <h4>Tap from below the middleware</h4>
+          <p>A kernel-space eBPF socket filter sees wire frames as they leave or enter the NIC. Userspace reassembles, decodes, and reconstructs the graph. The middleware never sees ros2probe.</p>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <h3 style="font-size: 18px; margin: 32px 0 16px;">Userspace pipeline</h3>
+      <div class="arch-layers">
+        <div class="arch-layer">
+          <div class="lvl">L1 · Capture</div>
+          <h4>Zero-copy ring buffer, per-interface workers</h4>
+          <p>Kernel timestamps arrive with each frame. Loopback is included by default so intra-host UDP traffic is captured too.</p>
+        </div>
+        <div class="arch-layer">
+          <div class="lvl">L2 · Wire decoder</div>
+          <h4>RTPS parser, fragment reassembly</h4>
+          <p>Vendor-neutral across DDS implementations. OMG RTPS is the only ABI. The Zenoh wire format will plug in at the same layer.</p>
+        </div>
+        <div class="arch-layer">
+          <div class="lvl">L3 · Graph reconstruction</div>
+          <h4>Participants, endpoints, nodes, topics</h4>
+          <p>ros_discovery_info binds endpoint GUIDs to ROS node namespaces. TTL sweep keeps state fresh when nodes disappear.</p>
+        </div>
+        <div class="arch-layer">
+          <div class="lvl">L4 · Applications</div>
+          <h4>CLI · GUI · MCAP recorder</h4>
+          <p>A single Unix socket command bus multiplexes all consumers. Sessions open and close, the kernel filter follows automatically.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Features -->
+    <div class="tab-panel" data-tab="features">
+      <div class="feature-grid">
+        <div class="feature">
+          <div class="icon">∅</div>
+          <h4>Zero ROS subscriptions</h4>
+          <p>ros2probe never joins the middleware graph. Your <span class="inline-code">ros2 topic list</span> stays clean.</p>
+        </div>
+        <div class="feature">
+          <div class="icon">⇅</div>
+          <h4>Full graph reconstruction</h4>
+          <p>Participants, endpoints, node names, pub/sub relationships, all derived from wire discovery and ros_discovery_info.</p>
+        </div>
+        <div class="feature">
+          <div class="icon">◉</div>
+          <h4>SHM topic visibility</h4>
+          <p>SHM-only topics are identified and made observable on demand via namespace-isolated shadow subscribers.</p>
+        </div>
+        <div class="feature">
+          <div class="icon">⟳</div>
+          <h4>Live topic metrics</h4>
+          <p>Publish rate (hz), bandwidth (bw), end-to-end delay, and decoded echo, all with sliding-window statistics.</p>
+        </div>
+        <div class="feature">
+          <div class="icon">▣</div>
+          <h4>MCAP recording</h4>
+          <p>Bag files with optional zstd / lz4 compression, pause / resume, and per-topic selection.</p>
+        </div>
+        <div class="feature">
+          <div class="icon">⌘</div>
+          <h4>CLI + GUI</h4>
+          <p>Same data, two interfaces. <span class="inline-code">rp</span> for shells and scripts, <span class="inline-code">rp gui</span> for visual exploration.</p>
+        </div>
+        <div class="feature">
+          <div class="icon">◎</div>
+          <h4>Topic classification</h4>
+          <p>tf, parameter_events, rosout, debug, and SHM-only topics are automatically classified and separated in every UI.</p>
+        </div>
+        <div class="feature">
+          <div class="icon">⚡</div>
+          <h4>Data-centric discovery sync</h4>
+          <p>Each SEDP event immediately updates the kernel GID whitelist. RTPS protocol ordering ensures the GID is registered before DATA arrives — no time-based window needed.</p>
+        </div>
+        <div class="feature">
+          <div class="icon">⌖</div>
+          <h4>Vendor-neutral</h4>
+          <p>Wire-level observation only. No vendor-specific symbols, no middleware version coupling, no BTF/CO-RE fragility.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Live Demo -->
+    <div class="tab-panel" data-tab="demo">
+      <div style="display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px;">
+        <div class="media-frame">
+          <video class="media media-video" autoplay muted loop playsinline preload="metadata"
+                 aria-label="rp topic hz / bw / delay live metrics demo">
+            <source src="assets/demo-topic.webm" type="video/webm" />
+          </video>
+        </div>
+        <div class="media-frame">
+          <video class="media media-video" autoplay muted loop playsinline preload="metadata"
+                 aria-label="rp gui dashboard demo">
+            <source src="assets/demo-gui.webm" type="video/webm" />
+          </video>
+        </div>
+      </div>
+
+      <h3 style="margin: 28px 0 12px; font-size: 17px;">1. Start the runtime</h3>
+<pre class="code"><span class="cm"># auto-escalates to root if needed (CAP_NET_ADMIN + CAP_NET_RAW)</span>
+<span class="fn">rp</span> run</pre>
+
+      <h3 style="margin: 28px 0 12px; font-size: 17px;">2. Observe topics without touching the graph</h3>
+<pre class="code"><span class="fn">rp</span> topic list
+<span class="fn">rp</span> topic info <span class="st">/chatter</span>
+<span class="fn">rp</span> topic hz    <span class="st">/chatter</span>
+<span class="fn">rp</span> topic bw    <span class="st">/scan</span>
+<span class="fn">rp</span> topic delay <span class="st">/imu</span>
+<span class="fn">rp</span> topic echo  <span class="st">/chatter</span> --field data</pre>
+
+      <h3 style="margin: 28px 0 12px; font-size: 17px;">3. Record a bag without joining the middleware graph</h3>
+<pre class="code"><span class="fn">rp</span> bag record <span class="st">/chatter /scan</span> -o session.mcap --compression-format zstd</pre>
+
+      <h3 style="margin: 28px 0 12px; font-size: 17px;">4. Open the desktop UI</h3>
+<pre class="code"><span class="fn">rp</span> gui</pre>
+    </div>
+
+    <!-- TAB: Compare -->
+    <div class="tab-panel" data-tab="compare">
+      <p style="color: var(--text-dim); max-width: 820px; margin: 0 0 20px;">
+        <strong style="color: var(--text);">Not all of these tools are built for the same thing.</strong>
+        ros2_tracing and CARET are <em>performance-analysis</em> tools for callback chains and executors.
+        rosbag2 and ddsrecorder are <em>loggers</em>. ros2 daemon is a <em>CLI cache</em>.
+        ros2probe aims at <em>live middleware-level observation</em>. The table below makes this explicit in the first row.
+      </p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th style="width: 22%"></th>
+            <th>ros2 daemon</th>
+            <th>ros2 topic</th>
+            <th>rosbag2</th>
+            <th>ros2_tracing</th>
+            <th>CARET</th>
+            <th style="color: var(--accent)">ros2probe</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background: var(--bg-soft);">
+            <td style="font-weight: 600; color: var(--accent);">Purpose</td>
+            <td style="font-size: 12.5px; color: var(--text-dim);">CLI graph cache</td>
+            <td style="font-size: 12.5px; color: var(--text-dim);">Live topic CLI</td>
+            <td style="font-size: 12.5px; color: var(--text-dim);">Message logging</td>
+            <td style="font-size: 12.5px; color: var(--text-dim);">Callback / executor tracing</td>
+            <td style="font-size: 12.5px; color: var(--text-dim);">E2E callback-chain latency</td>
+            <td style="font-size: 12.5px; color: var(--text);"><strong>Live middleware-level observation</strong></td>
+          </tr>
+          <tr>
+            <td>Graph observation</td>
+            <td class="maybe">△</td>
+            <td class="no">✗</td>
+            <td class="no">✗</td>
+            <td class="no">✗</td>
+            <td class="maybe">△</td>
+            <td class="ok">●</td>
+          </tr>
+          <tr>
+            <td>Message recording</td>
+            <td class="no">✗</td>
+            <td class="no">✗</td>
+            <td class="ok">●</td>
+            <td class="no">✗</td>
+            <td class="no">✗</td>
+            <td class="ok">●</td>
+          </tr>
+          <tr>
+            <td>Callback / executor trace</td>
+            <td class="no">✗</td>
+            <td class="no">✗</td>
+            <td class="no">✗</td>
+            <td class="ok">●</td>
+            <td class="ok">●</td>
+            <td class="no">✗</td>
+          </tr>
+          <tr>
+            <td>Non-intrusive</td>
+            <td class="no">✗</td>
+            <td class="no">✗</td>
+            <td class="no">✗</td>
+            <td class="maybe">△</td>
+            <td class="maybe">△</td>
+            <td class="ok">●</td>
+          </tr>
+          <tr>
+            <td>Process restart not required</td>
+            <td class="ok">●</td>
+            <td class="ok">●</td>
+            <td class="ok">●</td>
+            <td class="ok">●</td>
+            <td class="no">✗</td>
+            <td class="ok">●</td>
+          </tr>
+          <tr>
+            <td>Middleware-neutral</td>
+            <td class="no">✗</td>
+            <td class="no">✗</td>
+            <td class="maybe">△</td>
+            <td class="maybe">△</td>
+            <td class="no">✗</td>
+            <td class="ok">●</td>
+          </tr>
+          <tr>
+            <td>Steady-state overhead</td>
+            <td class="no">high</td>
+            <td class="ok">none (off)</td>
+            <td class="ok">none (off)</td>
+            <td class="maybe">low</td>
+            <td class="no">high</td>
+            <td class="ok">minimal</td>
+          </tr>
+          <tr>
+            <td>Observer Effect on graph</td>
+            <td class="no">yes</td>
+            <td class="no">yes</td>
+            <td class="no">yes</td>
+            <td class="maybe">limited</td>
+            <td class="maybe">limited</td>
+            <td class="ok">none</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="color: var(--text-mute); font-size: 13px; margin-top: 16px; font-family: var(--mono);">
+        ● full support &nbsp;·&nbsp; △ partial / conditional &nbsp;·&nbsp; ✗ not supported
+      </p>
+      <p style="color: var(--text-mute); font-size: 13px; margin-top: 8px;">
+        ros2_tracing and CARET solve a different problem (internal performance analysis) and are complementary to ros2probe, not competitors.
+      </p>
+    </div>
+
+    <!-- TAB: Paper -->
+    <div class="tab-panel" data-tab="paper">
+      <div class="paper">
+        <div class="abstract">
+          <p style="color: var(--accent); font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 12px;">Abstract</p>
+          <p>
+            Observability tools for ROS&nbsp;2 are themselves observed: existing daemons, <strong>ros2 topic</strong> CLIs,
+            and rosbag2 recorders all join the middleware graph and perturb discovery, QoS negotiation, and data-plane load.
+            These are precisely the properties engineers try to measure.
+          </p>
+          <p>
+            We present <strong>ros2probe</strong>, a middleware-level observability architecture that taps wire frames
+            at the kernel network path with an eBPF socket filter, never creating a middleware participant at steady state.
+            The design contributes
+            <strong>(i)</strong> a passive observer that preserves logical topology integrity,
+            <strong>(ii)</strong> adaptive kernel-side semantic selectivity,
+            <strong>(iii)</strong> discovery race-free selectivity through data-centric, event-driven GID synchronisation, and
+            <strong>(iv)</strong> an adaptive visibility strategy for shared-memory blind spots.
+          </p>
+          <p>
+            On a real testbed of laptops, a Jetson Orin Nano, and a Raspberry Pi running teleoperation, IMU, and
+            sensor-grade LiDAR and camera workloads derived from actual product specifications
+            (Velodyne / Ouster / Hesai LiDAR tiers, 720p / 1080p RGB and depth streams), ros2probe eliminates
+            observer-induced network overhead, contributes zero SPDP / SEDP traffic beyond <strong>ros2 daemon</strong>,
+            lowers CPU and RSS cost relative to both <strong>ros2 daemon</strong> and the active
+            <strong>rosbag2</strong> / <strong>ros2 topic hz</strong> tools, and sustains a drop-rate saturation frontier
+            at least on par with rosbag2 under a synthetic rate × size stress sweep. The architecture is not tied to
+            any specific middleware: RTPS is supported today, Zenoh is planned.
+          </p>
+        </div>
+
+        <div class="paper-meta">
+          <div class="row"><span class="k">Status</span><span class="v">Pre-submission · in preparation</span></div>
+          <div class="row"><span class="k">Track</span><span class="v">Middleware / systems</span></div>
+          <div class="row"><span class="k">Artifacts</span><span class="v">Open-source runtime + CLI + GUI</span></div>
+          <div class="row"><span class="k">Supported</span><span class="v">FastDDS, CycloneDDS · Zenoh planned</span></div>
+          <div class="row"><span class="k">Platform</span><span class="v">Linux 5.15+ · x86_64 · aarch64</span></div>
+
+          <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+            <a class="btn btn-primary" href="#" data-soon="Preprint" style="justify-content: center;">Download preprint (PDF)</a>
+            <a class="btn btn-ghost" href="#" data-soon="Supplementary" style="justify-content: center;">Supplementary material</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <h3 style="font-size: 20px; margin: 40px 0 16px;">Four contributions</h3>
+      <div class="contrib-grid">
+        <div class="contrib">
+          <span class="tag">C1</span>
+          <h3>Non-intrusive Observation</h3>
+          <p>Passive Observer architecture. No middleware participant at steady state. The monitoring tool does not become part of what it measures.</p>
+        </div>
+        <div class="contrib">
+          <span class="tag">C2</span>
+          <h3>Adaptive Kernel-side Selectivity</h3>
+          <p>Session-level topic interest compiles to a kernel filter. Fragment-aware fallback preserves correctness regardless of middleware configuration.</p>
+        </div>
+        <div class="contrib">
+          <span class="tag">C3</span>
+          <h3>Discovery Race-free Selectivity</h3>
+          <p>Data-centric, event-driven GID synchronisation: each SEDP announcement immediately updates the kernel whitelist. RTPS protocol ordering structurally prevents discovery-vs-data races.</p>
+        </div>
+        <div class="contrib">
+          <span class="tag">C4</span>
+          <h3>Adaptive Visibility</h3>
+          <p>The main observer stays zero-participant. SHM-only topics become visible on demand: ros2probe launches a short-lived subprocess inside an isolated mount namespace, and only that subprocess joins the DDS domain. The runtime itself never registers as a middleware participant.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Experiments -->
+    <div class="tab-panel" data-tab="experiments">
+      <p style="color: var(--text-dim); max-width: 820px; margin: 0 0 28px;">
+        Experiments run on a real testbed (laptops, Jetson Orin Nano, Raspberry Pi 4/5) with four workloads derived
+        from actual sensor product specifications: teleoperation (S1 · Twist 100&nbsp;Hz), IMU (S2 · 200&nbsp;Hz),
+        a four-tier LiDAR ladder (S3 · 2D → VLP-16 → VLP-32C → HDL-64E / OS1-128), and a four-tier camera ladder
+        (S4 · JPEG 720p → Depth 640×480 → RGB 720p → RGB 1080p).
+      </p>
+
+      <div class="exp-grid">
+        <div class="exp">
+          <div class="ex-no">Experiment 01</div>
+          <h4>Observer network impact under bandwidth constraint</h4>
+          <p>Wired and Wi-Fi links, each of S1–S4 run independently. We measure Δ(TX+RX) added by the observer, plus drop rate and end-to-end latency (p50 / p95 / p99) on the observed topic.</p>
+          <div class="vs">vs rosbag2 · ros2 topic hz / echo</div>
+        </div>
+        <div class="exp">
+          <div class="ex-no">Experiment 02</div>
+          <h4>Discovery impact</h4>
+          <p>SPDP and SEDP pub/sub packet counts per minute over a static N-node ROS&nbsp;2 graph (N ∈ {2, 5, 10, 20, 50}). ros2probe contributes zero at steady state.</p>
+          <div class="vs">vs ros2 daemon</div>
+        </div>
+        <div class="exp">
+          <div class="ex-no">Experiment 03</div>
+          <h4>CPU and memory overhead</h4>
+          <p>Four scenarios (idle · discovery-only observer · bag record · topic hz) × workloads {S1, S2, S3 64ch, S4 1080p} run independently × three hosts (Laptop, Orin Nano, Pi). pidstat CPU % and VmRSS.</p>
+          <div class="vs">vs ros2 daemon · rosbag2 · ros2 topic hz</div>
+        </div>
+        <div class="exp">
+          <div class="ex-no">Experiment 04</div>
+          <h4>Real-time throughput ceiling (synthetic stress)</h4>
+          <p>Synthetic <span class="inline-code">/stress</span> topic swept across rate ∈ {10…1000}&nbsp;Hz × size ∈ {4&nbsp;KB…16&nbsp;MB} on laptop localhost. Drop-rate 1% saturation frontier compared head-to-head.</p>
+          <div class="vs">vs rosbag2</div>
+        </div>
+        <div class="exp">
+          <div class="ex-no">Experiment 05 · optional</div>
+          <h4>Auxiliary verification</h4>
+          <p>Inter-vendor graph reconstruction (FastDDS + CycloneDDS mixed), SHM-only topic visibility via <span class="inline-code">rp discover</span>, and loopback-interface auto-capture for intra-host UDP traffic.</p>
+          <div class="vs">vendor / SHM / loopback</div>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div class="placeholder placeholder-screen" style="border-radius: var(--radius-md); margin-top: 24px;">
+        <div class="big">Figure · Exp.1 results — coming soon</div>
+        <div>Result figures will be added once the experiments finish.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- USAGE SNAPSHOT -->
+<section id="usage">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">In practice</span>
+      <h2>Same data, two interfaces.</h2>
+      <p>Scripts talk to <span class="inline-code">rp</span> over a Unix socket. Humans get a GUI with a dashboard, a topic monitor, and a bag recorder.</p>
+    </div>
+
+    <div class="gallery">
+      <div>
+        <div class="media-frame">
+          <img class="media media-screen" src="assets/dashboard.png" alt="ros2probe Dashboard page" loading="lazy" />
+        </div>
+        <p style="color: var(--text-mute); font-size: 13px; font-family: var(--mono); margin-top: 8px; text-align: center;">rp gui → Dashboard</p>
+      </div>
+      <div>
+        <div class="media-frame">
+          <img class="media media-screen" src="assets/topic-monitor.png" alt="ros2probe Topic Monitor page" loading="lazy" />
+        </div>
+        <p style="color: var(--text-mute); font-size: 13px; font-family: var(--mono); margin-top: 8px; text-align: center;">rp gui → Topic Monitor</p>
+      </div>
+      <div>
+        <div class="media-frame">
+          <img class="media media-screen" src="assets/bag-recorder.png" alt="ros2probe Bag Recorder page" loading="lazy" />
+        </div>
+        <p style="color: var(--text-mute); font-size: 13px; font-family: var(--mono); margin-top: 8px; text-align: center;">rp gui → Bag Recorder</p>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <h3 style="margin: 40px 0 14px; font-size: 18px;">CLI at a glance</h3>
+    <table class="matrix">
+      <thead>
+        <tr><th>Command</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="inline-code">rp run</span></td><td>Start the runtime daemon (auto-escalates to root if needed)</td></tr>
+        <tr><td><span class="inline-code">rp gui</span></td><td>Launch the desktop GUI</td></tr>
+        <tr><td><span class="inline-code">rp topic list</span></td><td>List topics with recordable / internal separation</td></tr>
+        <tr><td><span class="inline-code">rp topic hz &lt;topic&gt;</span></td><td>Live publish rate (mean / min / max / stddev)</td></tr>
+        <tr><td><span class="inline-code">rp topic bw &lt;topic&gt;</span></td><td>Live bandwidth</td></tr>
+        <tr><td><span class="inline-code">rp topic delay &lt;topic&gt;</span></td><td>End-to-end delay from header.stamp</td></tr>
+        <tr><td><span class="inline-code">rp topic echo &lt;topic&gt;</span></td><td>Stream decoded messages (rclpy-backed)</td></tr>
+        <tr><td><span class="inline-code">rp bag record [TOPICS…]</span></td><td>Record MCAP bag · zstd / lz4 / none</td></tr>
+        <tr><td><span class="inline-code">rp node list · info</span></td><td>Discovered nodes and their endpoints</td></tr>
+        <tr><td><span class="inline-code">rp discover</span></td><td>Force ros_discovery_info broadcast (SHM-aware shadow mode)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- INSTALL -->
+<section id="install">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">Get it running</span>
+      <h2>Install.</h2>
+      <p>Linux 5.15+, Rust stable + nightly, one eBPF linker. Takes about five minutes on a fresh Ubuntu.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; align-items: start;">
+      <div style="display: flex; flex-direction: column; gap: 24px;">
+
+        <!-- Step 1: System dependencies -->
+        <div>
+          <h3 style="font-size: 16px; margin: 0 0 6px;">1 · System dependencies</h3>
+          <p style="color: var(--text-mute); font-size: 13px; margin: 0 0 10px;">Always required (TLS for reqwest):</p>
+          <div class="code-wrap">
+            <button class="code-copy" onclick="copyFromId(this, 'install-deps-base')">copy</button>
+            <pre class="code" id="install-deps-base"><span class="fn">sudo</span> apt install -y pkg-config libssl-dev</pre>
+          </div>
+          <p style="color: var(--text-mute); font-size: 13px; margin: 12px 0 10px;">Only for the <strong style="color: var(--text);">full</strong> (GUI) build — file dialog via rfd/gtk3:</p>
+          <div class="code-wrap">
+            <button class="code-copy" onclick="copyFromId(this, 'install-deps-gui')">copy</button>
+            <pre class="code" id="install-deps-gui"><span class="fn">sudo</span> apt install -y libgtk-3-dev</pre>
+          </div>
+        </div>
+
+        <!-- Step 2: Rust toolchain -->
+        <div>
+          <h3 style="font-size: 16px; margin: 0 0 6px;">2 · Rust toolchain</h3>
+          <p style="color: var(--text-mute); font-size: 13px; margin: 0 0 10px;">Install rustup, then add nightly + the eBPF linker:</p>
+          <div class="code-wrap">
+            <button class="code-copy" onclick="copyFromId(this, 'install-rust')">copy</button>
+            <pre class="code" id="install-rust"><span class="fn">curl</span> --proto <span class="st">'=https'</span> --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+<span class="kw">source</span> <span class="st">"$HOME/.cargo/env"</span>
+
+<span class="fn">rustup</span> toolchain install nightly --component rust-src
+<span class="fn">cargo</span> install bpf-linker</pre>
+          </div>
+        </div>
+
+        <!-- Step 3: Clone -->
+        <div>
+          <h3 style="font-size: 16px; margin: 0 0 6px;">3 · Clone</h3>
+          <div class="code-wrap">
+            <button class="code-copy" onclick="copyFromId(this, 'install-clone')">copy</button>
+            <pre class="code" id="install-clone">git clone https://github.com/DGIST-CSILAB/ros2probe.git
+<span class="kw">cd</span> ros2probe</pre>
+          </div>
+        </div>
+
+        <!-- Step 4: Build (choose one) -->
+        <div>
+          <h3 style="font-size: 16px; margin: 0 0 6px;">4 · Build (pick one)</h3>
+          <p style="color: var(--text-mute); font-size: 13px; margin: 0 0 10px;"><strong style="color: var(--text);">Full</strong> — runtime + CLI + GUI:</p>
+          <div class="code-wrap">
+            <button class="code-copy" onclick="copyFromId(this, 'install-build-full')">copy</button>
+            <pre class="code" id="install-build-full"><span class="fn">cargo</span> build</pre>
+          </div>
+          <p style="color: var(--text-mute); font-size: 13px; margin: 12px 0 10px;"><strong style="color: var(--text);">Minimal</strong> — runtime + CLI only (no eframe/egui/rfd, no <span class="inline-code">rp gui</span>):</p>
+          <div class="code-wrap">
+            <button class="code-copy" onclick="copyFromId(this, 'install-build-min')">copy</button>
+            <pre class="code" id="install-build-min"><span class="fn">cargo</span> build --no-default-features</pre>
+          </div>
+        </div>
+
+        <!-- Step 5: Install -->
+        <div>
+          <h3 style="font-size: 16px; margin: 0 0 6px;">5 · Install <span style="color: var(--text-mute); font-weight: 400; font-size: 13px;">(into <span class="inline-code">~/.cargo/bin</span>)</span></h3>
+          <p style="color: var(--text-mute); font-size: 13px; margin: 0 0 10px;"><strong style="color: var(--text);">Full</strong>:</p>
+          <div class="code-wrap">
+            <button class="code-copy" onclick="copyFromId(this, 'install-cargo-full')">copy</button>
+            <pre class="code" id="install-cargo-full"><span class="fn">cargo</span> install --path ros2probe --bins</pre>
+          </div>
+          <p style="color: var(--text-mute); font-size: 13px; margin: 12px 0 10px;"><strong style="color: var(--text);">Minimal</strong>:</p>
+          <div class="code-wrap">
+            <button class="code-copy" onclick="copyFromId(this, 'install-cargo-min')">copy</button>
+            <pre class="code" id="install-cargo-min"><span class="fn">cargo</span> install --path ros2probe --bins --no-default-features</pre>
+          </div>
+        </div>
+
+      </div>
+
+      <div>
+        <table class="matrix">
+          <thead><tr><th>Requirement</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge info">Linux 5.15+</span></td><td>eBPF socket filter, AF_PACKET TPACKET_V3</td></tr>
+            <tr><td><span class="badge info">ROS 2 Humble+</span></td><td>Iron, Jazzy, Rolling also supported</td></tr>
+            <tr><td><span class="badge info">Rust ≥ 1.85</span></td><td>Stable + nightly (rust-src) — installed via rustup</td></tr>
+            <tr><td><span class="badge">bpf-linker</span></td><td>Required for the eBPF program</td></tr>
+            <tr><td><span class="badge">libssl-dev</span></td><td>Always required (reqwest TLS)</td></tr>
+            <tr><td><span class="badge">libgtk-3-dev</span></td><td>Full build only (rfd file dialog) · skip for minimal</td></tr>
+            <tr><td><span class="badge">Python 3 + rclpy</span></td><td>Only for <span class="inline-code">rp topic echo</span> / <span class="inline-code">delay</span></td></tr>
+            <tr><td><span class="badge ok">Optional</span></td><td>Jumbo frames, DDS XML profile that avoids IP fragmentation</td></tr>
+          </tbody>
+        </table>
+        <p style="color: var(--text-mute); font-size: 12.5px; font-family: var(--mono); margin-top: 12px; line-height: 1.6;">
+          <strong style="color: var(--accent);">Two build profiles.</strong>
+          Full = runtime + CLI + GUI (default).<br>
+          Minimal = runtime + CLI only.<br>
+          Use minimal on headless hosts; <span class="inline-code">libgtk-3-dev</span> is not needed.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CITE -->
+<section id="cite">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">Cite</span>
+      <h2>If you use ros2probe in your research.</h2>
+      <p>BibTeX entry will be updated once the paper is accepted. Preprint citation below.</p>
+    </div>
+    <div class="cite">
+      <button class="cite-copy" onclick="copyFromId(this, 'bib')">copy</button>
+<pre style="margin: 0;" id="bib">@inproceedings{ros2probe2026,
+  title     = {ros2probe: Non-intrusive, Kernel-selective Observability for ROS 2 Middleware},
+  author    = {Yu, Jisang and Lee, Sanghoon and Park, Kyung-Joon and others},
+  booktitle = {ArXiv},
+  year      = {2026},
+  note      = {In preparation}
+}</pre>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="logo" style="margin-bottom: 12px;">
+          <span class="logo-mark">rp</span>
+          <span>ros2probe</span>
+        </div>
+        <p style="color: var(--text-mute); font-size: 13.5px; margin: 0; max-width: 320px;">
+          Host-level observability for ROS&nbsp;2 middleware traffic, without creating any ROS&nbsp;2 subscriptions.
+          Built at DGIST CSI Lab.
+        </p>
+      </div>
+      <div>
+        <h5>Project</h5>
+        <ul>
+          <li><a href="https://github.com/DGIST-CSILAB/ros2probe" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="#" data-soon="Docs">Docs</a></li>
+          <li><a href="#" data-soon="Changelog">Changelog</a></li>
+          <li><a href="#" data-soon="Issues">Issues</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Research</h5>
+        <ul>
+          <li><a href="#" data-soon="Preprint">Paper (preprint)</a></li>
+          <li><a href="#experiments">Experiments</a></li>
+          <li><a href="#cite">Cite</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Community</h5>
+        <ul>
+          <li><a href="#" data-soon="ROS Discourse thread">ROS Discourse</a></li>
+          <li><a href="#" data-soon="Discussion">Discussion</a></li>
+          <li><a href="mailto:leesh2913@dgist.ac.kr">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="copy">© 2026 ros2probe contributors &nbsp;·&nbsp; Apache-2.0 (eBPF: GPL-2.0 OR Apache-2.0) &nbsp;·&nbsp; Built with Rust + aya</div>
+  </div>
+</footer>
+
+<!-- Toast -->
+<div class="toast" id="soon-toast" role="status" aria-live="polite">
+  <span class="tag-soon">Coming Soon</span>
+  <span id="soon-msg"><strong>This</strong> isn't available yet.</span>
+</div>
+
+<script>
+  // Theme toggle (persisted to localStorage; head script set the initial value)
+  (function () {
+    const root = document.documentElement;
+    const btn = document.getElementById('theme-toggle');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('ros2probe-theme', next); } catch (_) {}
+    });
+  })();
+
+  // Tabs
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.tab-panel');
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.getAttribute('data-tab');
+      tabs.forEach(t => t.setAttribute('aria-selected', t === btn ? 'true' : 'false'));
+      panels.forEach(p => {
+        if (p.getAttribute('data-tab') === name) p.setAttribute('data-active', '');
+        else p.removeAttribute('data-active');
+      });
+    });
+  });
+
+  // Generic clipboard copy for any element by ID (BibTeX, install snippet, etc.)
+  function copyFromId(btn, targetId) {
+    const el = document.getElementById(targetId);
+    if (!el) return;
+    const text = el.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const prev = btn.innerText;
+      btn.innerText = 'copied';
+      setTimeout(() => btn.innerText = prev, 1400);
+    });
+  }
+
+  // Coming Soon toast — click delegation on any element with data-soon
+  (function () {
+    const toast = document.getElementById('soon-toast');
+    const msg = document.getElementById('soon-msg');
+    let hideTimer = null;
+
+    document.addEventListener('click', (e) => {
+      const target = e.target.closest('[data-soon]');
+      if (!target) return;
+      e.preventDefault();
+      const label = target.getAttribute('data-soon') || 'This';
+      msg.innerHTML = '<strong>' + label + '</strong> is not available yet. The paper and materials are still being prepared.';
+      toast.classList.add('show');
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+    });
+  })();
+</script>
+
+</body>
+</html>

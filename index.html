@@ -1213,33 +1213,18 @@
           </div>
         </div>
 
-        <!-- Step 4: Build (choose one) -->
+        <!-- Step 4: Build & Install (choose one) -->
         <div>
-          <h3 style="font-size: 16px; margin: 0 0 6px;">4 · Build (pick one)</h3>
+          <h3 style="font-size: 16px; margin: 0 0 6px;">4 · Build & Install (pick one)</h3>
           <p style="color: var(--text-mute); font-size: 13px; margin: 0 0 10px;"><strong style="color: var(--text);">Full</strong> — runtime + CLI + GUI:</p>
           <div class="code-wrap">
             <button class="code-copy" onclick="copyFromId(this, 'install-build-full')">copy</button>
-            <pre class="code" id="install-build-full"><span class="fn">cargo</span> build</pre>
+            <pre class="code" id="install-build-full"><span class="fn">cargo</span> install --path ros2probe --bins</pre>
           </div>
           <p style="color: var(--text-mute); font-size: 13px; margin: 12px 0 10px;"><strong style="color: var(--text);">Minimal</strong> — runtime + CLI only (no eframe/egui/rfd, no <span class="inline-code">rp gui</span>):</p>
           <div class="code-wrap">
             <button class="code-copy" onclick="copyFromId(this, 'install-build-min')">copy</button>
-            <pre class="code" id="install-build-min"><span class="fn">cargo</span> build --no-default-features</pre>
-          </div>
-        </div>
-
-        <!-- Step 5: Install -->
-        <div>
-          <h3 style="font-size: 16px; margin: 0 0 6px;">5 · Install <span style="color: var(--text-mute); font-weight: 400; font-size: 13px;">(into <span class="inline-code">~/.cargo/bin</span>)</span></h3>
-          <p style="color: var(--text-mute); font-size: 13px; margin: 0 0 10px;"><strong style="color: var(--text);">Full</strong>:</p>
-          <div class="code-wrap">
-            <button class="code-copy" onclick="copyFromId(this, 'install-cargo-full')">copy</button>
-            <pre class="code" id="install-cargo-full"><span class="fn">cargo</span> install --path ros2probe --bins</pre>
-          </div>
-          <p style="color: var(--text-mute); font-size: 13px; margin: 12px 0 10px;"><strong style="color: var(--text);">Minimal</strong>:</p>
-          <div class="code-wrap">
-            <button class="code-copy" onclick="copyFromId(this, 'install-cargo-min')">copy</button>
-            <pre class="code" id="install-cargo-min"><span class="fn">cargo</span> install --path ros2probe --bins --no-default-features</pre>
+            <pre class="code" id="install-build-min"><span class="fn">cargo</span> install --path ros2probe --bins --no-default-features</pre>
           </div>
         </div>
 

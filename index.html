@@ -1168,63 +1168,36 @@
     <div class="section-head">
       <span class="kicker">Get it running</span>
       <h2>Install.</h2>
-      <p>Linux 5.15+, Rust stable + nightly, one eBPF linker. Takes about five minutes on a fresh Ubuntu.</p>
+      <p>No Rust, no compiler, no build dependencies required — just download and run.</p>
     </div>
 
-    <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; align-items: start;">
-      <div style="display: flex; flex-direction: column; gap: 24px;">
+    <div style="display: grid; grid-template-columns: minmax(0, 480px) 1fr; gap: 24px; align-items: start;">
+      <div style="display: flex; flex-direction: column; gap: 24px; min-width: 0;">
 
-        <!-- Step 1: System dependencies -->
+        <!-- CLI only -->
         <div>
-          <h3 style="font-size: 16px; margin: 0 0 6px;">1 · System dependencies</h3>
-          <p style="color: var(--text-mute); font-size: 13px; margin: 0 0 10px;">Always required (TLS for reqwest):</p>
+          <h3 style="font-size: 16px; margin: 0 0 6px;">CLI only</h3>
           <div class="code-wrap">
-            <button class="code-copy" onclick="copyFromId(this, 'install-deps-base')">copy</button>
-            <pre class="code" id="install-deps-base"><span class="fn">sudo</span> apt install -y pkg-config libssl-dev</pre>
-          </div>
-          <p style="color: var(--text-mute); font-size: 13px; margin: 12px 0 10px;">Only for the <strong style="color: var(--text);">full</strong> (GUI) build — file dialog via rfd/gtk3:</p>
-          <div class="code-wrap">
-            <button class="code-copy" onclick="copyFromId(this, 'install-deps-gui')">copy</button>
-            <pre class="code" id="install-deps-gui"><span class="fn">sudo</span> apt install -y libgtk-3-dev</pre>
+            <button class="code-copy" onclick="copyFromId(this, 'install-cli')">copy</button>
+            <pre class="code" id="install-cli"><span class="fn">curl</span> -fsSL https://github.com/csi-dgist/ros2probe/releases/latest/download/install.sh | sh</pre>
           </div>
         </div>
 
-        <!-- Step 2: Rust toolchain -->
+        <!-- CLI + GUI -->
         <div>
-          <h3 style="font-size: 16px; margin: 0 0 6px;">2 · Rust toolchain</h3>
-          <p style="color: var(--text-mute); font-size: 13px; margin: 0 0 10px;">Install rustup, then add nightly + the eBPF linker:</p>
+          <h3 style="font-size: 16px; margin: 0 0 6px;">CLI + GUI <span style="color: var(--text-mute); font-size: 13px; font-weight: normal;">(x86-64 only)</span></h3>
           <div class="code-wrap">
-            <button class="code-copy" onclick="copyFromId(this, 'install-rust')">copy</button>
-            <pre class="code" id="install-rust"><span class="fn">curl</span> --proto <span class="st">'=https'</span> --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-<span class="kw">source</span> <span class="st">"$HOME/.cargo/env"</span>
-
-<span class="fn">rustup</span> toolchain install nightly --component rust-src
-<span class="fn">cargo</span> install bpf-linker</pre>
+            <button class="code-copy" onclick="copyFromId(this, 'install-gui')">copy</button>
+            <pre class="code" id="install-gui"><span class="fn">curl</span> -fsSL https://github.com/csi-dgist/ros2probe/releases/latest/download/install.sh | sh -s -- --gui</pre>
           </div>
         </div>
 
-        <!-- Step 3: Clone -->
+        <!-- Uninstall -->
         <div>
-          <h3 style="font-size: 16px; margin: 0 0 6px;">3 · Clone</h3>
+          <h3 style="font-size: 16px; margin: 0 0 6px;">Uninstall</h3>
           <div class="code-wrap">
-            <button class="code-copy" onclick="copyFromId(this, 'install-clone')">copy</button>
-            <pre class="code" id="install-clone">git clone https://github.com/csi-dgist/ros2probe.git
-<span class="kw">cd</span> ros2probe</pre>
-          </div>
-        </div>
-
-        <!-- Step 4: Build & Install (choose one) -->
-        <div>
-          <h3 style="font-size: 16px; margin: 0 0 6px;">4 · Build & Install (pick one)</h3>
-          <p style="color: var(--text-mute); font-size: 13px; margin: 0 0 10px;"><strong style="color: var(--text);">Full</strong> — runtime + CLI + GUI:</p>
-          <div class="code-wrap">
-            <button class="code-copy" onclick="copyFromId(this, 'install-build-full')">copy</button>
-            <pre class="code" id="install-build-full"><span class="fn">cargo</span> install --path ros2probe --bins</pre>
-          </div>
-          <p style="color: var(--text-mute); font-size: 13px; margin: 12px 0 10px;"><strong style="color: var(--text);">Minimal</strong> — runtime + CLI only (no eframe/egui/rfd, no <span class="inline-code">rp gui</span>):</p>
-          <div class="code-wrap">
-            <button class="code-copy" onclick="copyFromId(this, 'install-build-min')">copy</button>
-            <pre class="code" id="install-build-min"><span class="fn">cargo</span> install --path ros2probe --bins --no-default-features</pre>
+            <button class="code-copy" onclick="copyFromId(this, 'uninstall')">copy</button>
+            <pre class="code" id="uninstall"><span class="fn">sudo</span> rm /usr/local/bin/rp</pre>
           </div>
         </div>
 
@@ -1236,20 +1209,10 @@
           <tbody>
             <tr><td><span class="badge info">Linux 5.15+</span></td><td>eBPF socket filter, AF_PACKET TPACKET_V3</td></tr>
             <tr><td><span class="badge info">ROS 2 Humble+</span></td><td>Iron, Jazzy, Rolling also supported</td></tr>
-            <tr><td><span class="badge info">Rust ≥ 1.85</span></td><td>Stable + nightly (rust-src) — installed via rustup</td></tr>
-            <tr><td><span class="badge">bpf-linker</span></td><td>Required for the eBPF program</td></tr>
-            <tr><td><span class="badge">libssl-dev</span></td><td>Always required (reqwest TLS)</td></tr>
-            <tr><td><span class="badge">libgtk-3-dev</span></td><td>Full build only (rfd file dialog) · skip for minimal</td></tr>
             <tr><td><span class="badge">Python 3 + rclpy</span></td><td>Only for <span class="inline-code">rp topic echo</span> / <span class="inline-code">delay</span></td></tr>
             <tr><td><span class="badge ok">Optional</span></td><td>Jumbo frames, DDS XML profile that avoids IP fragmentation</td></tr>
           </tbody>
         </table>
-        <p style="color: var(--text-mute); font-size: 12.5px; font-family: var(--mono); margin-top: 12px; line-height: 1.6;">
-          <strong style="color: var(--accent);">Two build profiles.</strong>
-          Full = runtime + CLI + GUI (default).<br>
-          Minimal = runtime + CLI only.<br>
-          Use minimal on headless hosts; <span class="inline-code">libgtk-3-dev</span> is not needed.
-        </p>
       </div>
     </div>
   </div>

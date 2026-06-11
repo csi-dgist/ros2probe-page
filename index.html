@@ -377,6 +377,8 @@
   table.matrix td.ok { color: var(--ok); text-align: center; }
   table.matrix td.no { color: var(--danger); text-align: center; }
   table.matrix td.maybe { color: var(--warn); text-align: center; }
+  table.matrix th.num, table.matrix td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.matrix tr.total td { font-weight: 600; color: var(--text); background: var(--bg-soft); }
   table.matrix tbody tr:last-child td { border-bottom: none; }
   table.matrix tbody tr:hover { background: var(--surface); }
 
@@ -416,6 +418,24 @@
     margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line-soft);
     font-family: var(--mono); font-size: 12px; color: var(--text-mute);
   }
+
+  /* Experiment result blocks: a description card stacked above its result figure. */
+  .exp-block { margin-bottom: 40px; }
+  .exp-block .exp { margin-bottom: 16px; }
+  /* White-backed frame so the matplotlib charts / LaTeX-table screenshots
+     (dark content on white) stay legible on the dark page theme. */
+  .exp-fig {
+    background: #fff; border: 1px solid var(--line-soft);
+    border-radius: var(--radius-md); padding: 16px; overflow-x: auto;
+  }
+  .exp-fig img { display: block; width: 100%; height: auto; }
+  /* Small-source screenshots (e.g. the fidelity table) shouldn't upscale past
+     their native width — cap the frame and center it. */
+  .exp-fig--narrow { max-width: 760px; margin-left: auto; margin-right: auto; }
+  .exp-cap {
+    margin: 12px 2px 0; color: var(--text-mute); font-size: 13px; line-height: 1.5;
+  }
+  .exp-cap strong { color: var(--text-dim); }
 
   /* Gallery — single column so screenshots render at full container width
      instead of being shrunk into 3 small tiles. */
@@ -518,8 +538,8 @@
     </div>
     <div class="nav-links">
       <a href="#overview">Overview</a>
-      <a href="#architecture">Architecture</a>
-      <a href="#paper">Paper</a>
+      <a href="#architecture" onclick="document.querySelector('.tab[data-tab=arch]').click()">Architecture</a>
+      <a href="#architecture" onclick="document.querySelector('.tab[data-tab=paper]').click()">Paper</a>
       <a href="#usage">Usage</a>
       <a href="#install">Install</a>
     </div>
@@ -543,7 +563,7 @@
     </p>
     <div class="hero-actions">
       <a class="btn btn-primary" href="#usage">Get started →</a>
-      <a class="btn btn-ghost" href="#" data-soon="Paper">Read the paper</a>
+      <a class="btn btn-ghost" href="https://arxiv.org/abs/2606.10746" target="_blank" rel="noopener">Read the paper ↗</a>
       <a class="btn btn-ghost" href="https://github.com/csi-dgist/ros2probe" target="_blank" rel="noopener">View on GitHub ↗</a>
     </div>
 
@@ -633,7 +653,7 @@
       <div class="contrib">
         <span class="tag">C4</span>
         <h3>Adaptive Visibility</h3>
-        <p>The main observer stays zero-participant. When the user explicitly observes a shared-memory topic, ros2probe spawns a short-lived, namespace-isolated subprocess that joins the DDS domain only inside its mount namespace — the runtime itself never becomes a middleware participant.</p>
+        <p>The main observer stays zero-participant. When the user explicitly observes a shared-memory topic, ros2probe spawns a short-lived, namespace-isolated subprocess that joins the DDS domain only inside its mount namespace. The runtime itself never becomes a middleware participant.</p>
       </div>
     </div>
   </div>
@@ -747,7 +767,7 @@
 
       <div class="spacer"></div>
 
-      <h3 style="font-size: 18px; margin: 32px 0 16px;">Userspace pipeline</h3>
+      <h3 style="font-size: 18px; margin: 32px 0 16px;">ros2probe pipeline</h3>
       <div class="arch-layers">
         <div class="arch-layer">
           <div class="lvl">L1 · Capture</div>
@@ -813,7 +833,7 @@
         <div class="feature">
           <div class="icon">⚡</div>
           <h4>Data-centric discovery sync</h4>
-          <p>Each SEDP event immediately updates the kernel GID whitelist. RTPS protocol ordering ensures the GID is registered before DATA arrives — no time-based window needed.</p>
+          <p>Each SEDP event immediately updates the kernel GID whitelist. RTPS protocol ordering ensures the GID is registered before DATA arrives, with no time-based window needed.</p>
         </div>
         <div class="feature">
           <div class="icon">⌖</div>
@@ -865,6 +885,8 @@
         <strong style="color: var(--text);">Not all of these tools are built for the same thing.</strong>
         ros2_tracing and CARET are <em>performance-analysis</em> tools for callback chains and executors.
         rosbag2 and ddsrecorder are <em>loggers</em>. ros2 daemon is a <em>CLI cache</em>.
+        Wireshark is a <em>general-purpose packet tool</em>, passive but ROS&nbsp;2-unaware,
+        so it cannot reconstruct the topic graph and its cost grows with total traffic, not with what you observe.
         ros2probe aims at <em>live middleware-level observation</em>. The table below makes this explicit in the first row.
       </p>
 
@@ -877,6 +899,7 @@
             <th>rosbag2</th>
             <th>ros2_tracing</th>
             <th>CARET</th>
+            <th>Wireshark</th>
             <th style="color: var(--accent)">ros2probe</th>
           </tr>
         </thead>
@@ -888,6 +911,7 @@
             <td style="font-size: 12.5px; color: var(--text-dim);">Message logging</td>
             <td style="font-size: 12.5px; color: var(--text-dim);">Callback / executor tracing</td>
             <td style="font-size: 12.5px; color: var(--text-dim);">E2E callback-chain latency</td>
+            <td style="font-size: 12.5px; color: var(--text-dim);">Packet-level RTPS inspection</td>
             <td style="font-size: 12.5px; color: var(--text);"><strong>Live middleware-level observation</strong></td>
           </tr>
           <tr>
@@ -897,6 +921,7 @@
             <td class="no">✗</td>
             <td class="no">✗</td>
             <td class="maybe">△</td>
+            <td class="no">✗</td>
             <td class="ok">●</td>
           </tr>
           <tr>
@@ -906,6 +931,7 @@
             <td class="ok">●</td>
             <td class="no">✗</td>
             <td class="no">✗</td>
+            <td class="maybe">△</td>
             <td class="ok">●</td>
           </tr>
           <tr>
@@ -916,6 +942,7 @@
             <td class="ok">●</td>
             <td class="ok">●</td>
             <td class="no">✗</td>
+            <td class="no">✗</td>
           </tr>
           <tr>
             <td>Non-intrusive</td>
@@ -924,6 +951,7 @@
             <td class="no">✗</td>
             <td class="maybe">△</td>
             <td class="maybe">△</td>
+            <td class="ok">●</td>
             <td class="ok">●</td>
           </tr>
           <tr>
@@ -934,6 +962,7 @@
             <td class="ok">●</td>
             <td class="no">✗</td>
             <td class="ok">●</td>
+            <td class="ok">●</td>
           </tr>
           <tr>
             <td>Middleware-neutral</td>
@@ -943,6 +972,7 @@
             <td class="maybe">△</td>
             <td class="no">✗</td>
             <td class="ok">●</td>
+            <td class="ok">●</td>
           </tr>
           <tr>
             <td>Steady-state overhead</td>
@@ -951,6 +981,7 @@
             <td class="ok">none (off)</td>
             <td class="maybe">low</td>
             <td class="no">high</td>
+            <td class="no">scales w/ traffic</td>
             <td class="ok">minimal</td>
           </tr>
           <tr>
@@ -960,6 +991,7 @@
             <td class="no">yes</td>
             <td class="maybe">limited</td>
             <td class="maybe">limited</td>
+            <td class="ok">none</td>
             <td class="ok">none</td>
           </tr>
         </tbody>
@@ -978,41 +1010,46 @@
         <div class="abstract">
           <p style="color: var(--accent); font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 12px;">Abstract</p>
           <p>
-            Observability tools for ROS&nbsp;2 are themselves observed: existing daemons, <strong>ros2 topic</strong> CLIs,
-            and rosbag2 recorders all join the middleware graph and perturb discovery, QoS negotiation, and data-plane load.
-            These are precisely the properties engineers try to measure.
+            Robot Operating System 2&nbsp;(ROS&nbsp;2), the de facto standard middleware framework for robots, runs each
+            robot as a graph of nodes communicating over the Data Distribution Service&nbsp;(DDS), a publish/subscribe
+            substrate. Observing this inter-node communication in real time is essential to robot development, yet
+            observing it has a price. A tool can receive data only by joining the DDS domain as a subscriber that
+            discovery has matched to the publisher, so the act of observing folds the tool into the system it measures
+            and perturbs it.
           </p>
           <p>
-            We present <strong>ros2probe</strong>, a middleware-level observability architecture that taps wire frames
-            at the kernel network path with an eBPF socket filter, never creating a middleware participant at steady state.
-            The design contributes
-            <strong>(i)</strong> a passive observer that preserves logical topology integrity,
-            <strong>(ii)</strong> adaptive kernel-side semantic selectivity,
-            <strong>(iii)</strong> discovery race-free selectivity through data-centric, event-driven GID synchronisation, and
-            <strong>(iv)</strong> an adaptive visibility strategy for shared-memory blind spots.
+            We define this protocol-inherent perturbation as the observer's <strong>probe effect</strong>. It inflates
+            the discovery plane, adds deserialization cost on the observer, makes the loss it reports diverge from what
+            the subscriber actually received, and near saturation displaces the subscriber's own messages. The only
+            existing escape, capturing all wire traffic passively, discards the ROS&nbsp;2 message semantics and scales
+            with total traffic, not with what is observed.
           </p>
           <p>
-            On a real testbed of laptops, a Jetson Orin Nano, and a Raspberry Pi running teleoperation, IMU, and
-            sensor-grade LiDAR and camera workloads derived from actual product specifications
-            (Velodyne / Ouster / Hesai LiDAR tiers, 720p / 1080p RGB and depth streams), ros2probe eliminates
-            observer-induced network overhead, contributes zero SPDP / SEDP traffic beyond <strong>ros2 daemon</strong>,
-            lowers CPU and RSS cost relative to both <strong>ros2 daemon</strong> and the active
-            <strong>rosbag2</strong> / <strong>ros2 topic hz</strong> tools, and sustains a drop-rate saturation frontier
-            at least on par with rosbag2 under a synthetic rate × size stress sweep. The architecture is not tied to
-            any specific middleware: RTPS is supported today, Zenoh is planned.
+            We present <strong>ros2probe</strong>, a non-intrusive observation framework that removes the probe effect.
+            It reconstructs the full ROS&nbsp;2 communication state from the domain's discovery packets at no bandwidth
+            cost, then drives an in-kernel filter restricted to the topics the user asks for, lifting only those packets
+            at minimal cost and observing the messages the real subscriber receives. Its interfaces and recordings match
+            the standard ROS&nbsp;2 tools.
+          </p>
+          <p>
+            Across three hardware platforms (laptop, Jetson, and Raspberry Pi), two DDS implementations, and seven
+            robot-operation workloads, ros2probe holds the discovery graph within 0.5% of an unobserved system, whereas
+            domain-joining tools inflate discovery up to 2.6&times; and drop 38.5% of the subscriber's messages at
+            saturation while ros2probe drops none. It reports loss with a recall of 1.0, cuts observer CPU and memory by
+            up to 7&times; and 28&times;, and stays practical on the embedded robots where existing tools overload the
+            system.
           </p>
         </div>
 
         <div class="paper-meta">
-          <div class="row"><span class="k">Status</span><span class="v">Pre-submission · in preparation</span></div>
+          <div class="row"><span class="k">Status</span><span class="v">Preprint · arXiv 2026</span></div>
           <div class="row"><span class="k">Track</span><span class="v">Middleware / systems</span></div>
           <div class="row"><span class="k">Artifacts</span><span class="v">Open-source runtime + CLI + GUI</span></div>
-          <div class="row"><span class="k">Supported</span><span class="v">FastDDS, CycloneDDS · Zenoh planned</span></div>
+          <div class="row"><span class="k">Supported</span><span class="v">FastDDS, CycloneDDS</span></div>
           <div class="row"><span class="k">Platform</span><span class="v">Linux 5.15+ · x86_64 · aarch64</span></div>
 
           <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
-            <a class="btn btn-primary" href="#" data-soon="Preprint" style="justify-content: center;">Download preprint (PDF)</a>
-            <a class="btn btn-ghost" href="#" data-soon="Supplementary" style="justify-content: center;">Supplementary material</a>
+            <a class="btn btn-primary" href="https://arxiv.org/pdf/2606.10746" target="_blank" rel="noopener" style="justify-content: center;">Download preprint (PDF)</a>
           </div>
         </div>
       </div>
@@ -1047,50 +1084,110 @@
     <!-- TAB: Experiments -->
     <div class="tab-panel" data-tab="experiments">
       <p style="color: var(--text-dim); max-width: 820px; margin: 0 0 28px;">
-        Experiments run on a real testbed (laptops, Jetson Orin Nano, Raspberry Pi 4/5) with four workloads derived
-        from actual sensor product specifications: teleoperation (S1 · Twist 100&nbsp;Hz), IMU (S2 · 200&nbsp;Hz),
-        a four-tier LiDAR ladder (S3 · 2D → VLP-16 → VLP-32C → HDL-64E / OS1-128), and a four-tier camera ladder
-        (S4 · JPEG 720p → Depth 640×480 → RGB 720p → RGB 1080p).
+        Four experiments on a real cross-host testbed (a publisher laptop with a laptop, an NVIDIA Jetson Orin&nbsp;NX,
+        and a Raspberry Pi&nbsp;4B as receivers) on Ubuntu&nbsp;22.04 (Linux&nbsp;5.15) and ROS&nbsp;2 Humble.
+        Quantitative results use FastDDS&nbsp;2.6.11, and ros2probe runs unmodified on CycloneDDS&nbsp;0.10.5 as well.
       </p>
 
-      <div class="exp-grid">
+      <div class="exp-block">
         <div class="exp">
           <div class="ex-no">Experiment 01</div>
-          <h4>Observer network impact under bandwidth constraint</h4>
-          <p>Wired and Wi-Fi links, each of S1–S4 run independently. We measure Δ(TX+RX) added by the observer, plus drop rate and end-to-end latency (p50 / p95 / p99) on the observed topic.</p>
-          <div class="vs">vs rosbag2 · ros2 topic hz / echo</div>
+          <h4>Discovery transparency</h4>
+          <p>SPDP / SEDP / Control discovery messages with every participant both publisher and subscriber, sweeping the participant count NP&nbsp;∈&nbsp;{1,&nbsp;3,&nbsp;5}, averaged over 10 runs. ros2probe creates no DDS participant, so it should leave the discovery graph untouched.</p>
+          <div class="vs">baseline · rp run · vs ros2 daemon</div>
         </div>
-        <div class="exp">
-          <div class="ex-no">Experiment 02</div>
-          <h4>Discovery impact</h4>
-          <p>SPDP and SEDP pub/sub packet counts per minute over a static N-node ROS&nbsp;2 graph (N ∈ {2, 5, 10, 20, 50}). ros2probe contributes zero at steady state.</p>
-          <div class="vs">vs ros2 daemon</div>
+        <div class="exp-fig">
+          <img src="assets/exp1_results.png" alt="Grouped bar charts of SPDP, SEDP, and Control discovery messages at NP = 1, 3, 5: rp run matches baseline while ros2 daemon inflates every message type." loading="lazy" />
         </div>
-        <div class="exp">
-          <div class="ex-no">Experiment 03</div>
-          <h4>CPU and memory overhead</h4>
-          <p>Four scenarios (idle · discovery-only observer · bag record · topic hz) × workloads {S1, S2, S3 64ch, S4 1080p} run independently × three hosts (Laptop, Orin Nano, Pi). pidstat CPU % and VmRSS.</p>
-          <div class="vs">vs ros2 daemon · rosbag2 · ros2 topic hz</div>
-        </div>
-        <div class="exp">
-          <div class="ex-no">Experiment 04</div>
-          <h4>Real-time throughput ceiling (synthetic stress)</h4>
-          <p>Synthetic <span class="inline-code">/stress</span> topic swept across rate ∈ {10…1000}&nbsp;Hz × size ∈ {4&nbsp;KB…16&nbsp;MB} on laptop localhost. Drop-rate 1% saturation frontier compared head-to-head.</p>
-          <div class="vs">vs rosbag2</div>
-        </div>
-        <div class="exp">
-          <div class="ex-no">Experiment 05 · optional</div>
-          <h4>Auxiliary verification</h4>
-          <p>Inter-vendor graph reconstruction (FastDDS + CycloneDDS mixed), SHM-only topic visibility via <span class="inline-code">rp discover</span>, and loopback-interface auto-capture for intra-host UDP traffic.</p>
-          <div class="vs">vendor / SHM / loopback</div>
-        </div>
+        <p class="exp-cap"><strong>Discovery messages under each condition (NP = 1, 3, 5).</strong> rp run matches the baseline at every scale, while the ros2 daemon inflates the total by 2.6×, 1.6×, and 1.5× across SPDP, SEDP, and Control.</p>
       </div>
 
-      <div class="spacer"></div>
+      <div class="exp-block">
+        <div class="exp">
+          <div class="ex-no">Experiment 02</div>
+          <h4>Resource overhead</h4>
+          <p>Observer-process CPU and PSS memory under a fixed 64&nbsp;KiB payload published at 100, 500, and 1000&nbsp;Hz, on three receivers (laptop, Jetson, and Raspberry Pi&nbsp;4B) for both rate measurement and recording.</p>
+          <div class="vs">rp hz vs ros2 hz · rp bag vs rosbag2</div>
+        </div>
+        <div class="exp-fig">
+          <img src="assets/exp2_results.png" alt="Bar charts of observer-process CPU and memory under rate measurement and recording across laptop, Jetson, and Raspberry Pi, showing ros2probe far below the ros2 tools." loading="lazy" />
+        </div>
+        <p class="exp-cap"><strong>Observer CPU and memory under rate measurement (a, b) and recording (c, d).</strong> rp hz parses only RTPS headers, cutting observer memory by up to 28× (1.7–3.9&nbsp;MB versus ~46&nbsp;MB for ros2 hz) and CPU by up to 7×. The gap turns from efficiency into feasibility on the embedded platforms.</p>
+      </div>
 
-      <div class="placeholder placeholder-screen" style="border-radius: var(--radius-md); margin-top: 24px;">
-        <div class="big">Figure · Exp.1 results — coming soon</div>
-        <div>Result figures will be added once the experiments finish.</div>
+      <div class="exp-block">
+        <div class="exp">
+          <div class="ex-no">Experiment 03</div>
+          <h4>Observation fidelity</h4>
+          <p>Recording a topic under 10% and 20% injected packet loss (<span class="inline-code">tc netem</span>, BEST_EFFORT QoS), matching each tool's recorded set against the messages the subscriber actually received, by sequence number.</p>
+          <div class="vs">rp bag vs rosbag2</div>
+        </div>
+        <div class="exp-fig exp-fig--narrow">
+          <img src="assets/exp3_results.png" alt="Table of drop rate and recall under 10% and 20% loss: rp bag reaches recall 1.00 at both levels, while rosbag2 reaches only 0.09 and 0.22." loading="lazy" />
+        </div>
+        <p class="exp-cap"><strong>Recall of reported losses against the subscriber's actual losses.</strong> Both tools report a similar aggregate drop rate, but rp bag reads the same wire frames as the subscriber and reaches recall&nbsp;1.00, whereas rosbag2's independent unicast stream catches only 0.09 (10%) and 0.22 (20%).</p>
+      </div>
+
+      <div class="exp-block">
+        <div class="exp">
+          <div class="ex-no">Experiment 04</div>
+          <h4>Probe effect</h4>
+          <p>Received bandwidth and the original subscriber's drop rate over seven workloads (S1–S7, sensor message to near-GbE composite), swept across the full 2×2 matrix of {BEST_EFFORT, RELIABLE} QoS × {wired, wireless} link.</p>
+          <div class="vs">rp hz / rp bag vs ros2 hz / rosbag2</div>
+        </div>
+        <table class="matrix">
+          <thead>
+            <tr>
+              <th>Scenario</th>
+              <th>Topic</th>
+              <th class="num">Payload</th>
+              <th class="num">Rate</th>
+              <th class="num">Est. bandwidth</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>S1</td><td><span class="inline-code">/imu</span></td><td class="num">320 B</td><td class="num">200 Hz</td><td class="num">~0.72 Mbps</td></tr>
+            <tr><td>S2</td><td><span class="inline-code">/scan</span></td><td class="num">4.3 KB</td><td class="num">40 Hz</td><td class="num">~1.4 Mbps</td></tr>
+            <tr><td>S3</td><td><span class="inline-code">/points</span></td><td class="num">644 KB</td><td class="num">20 Hz</td><td class="num">~103 Mbps</td></tr>
+            <tr><td>S4</td><td><span class="inline-code">/points</span></td><td class="num">2.72 MB</td><td class="num">20 Hz</td><td class="num">~435 Mbps</td></tr>
+            <tr><td>S5</td><td><span class="inline-code">/image_raw/compressed</span></td><td class="num">150 KB</td><td class="num">30 Hz</td><td class="num">~36 Mbps</td></tr>
+            <tr><td>S6</td><td><span class="inline-code">/depth/image_raw</span></td><td class="num">600 KB</td><td class="num">30 Hz</td><td class="num">~147 Mbps</td></tr>
+            <tr><td>S7</td><td>composite (see breakdown below)</td><td class="num">—</td><td class="num">—</td><td class="num">~830 Mbps</td></tr>
+          </tbody>
+        </table>
+        <p class="exp-cap"><strong>Workloads (S1–S7).</strong> Seven scenarios sweeping the offered bandwidth from a small IMU message (S1) up to a near-GbE autonomous-driving composite (S7).</p>
+
+        <div class="spacer" style="height: 24px;"></div>
+
+        <table class="matrix">
+          <thead>
+            <tr>
+              <th>S7 component topic</th>
+              <th class="num">Payload</th>
+              <th class="num">Rate</th>
+              <th class="num">Est. bandwidth</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="inline-code">/cmd_vel</span></td><td class="num">72 B</td><td class="num">20 Hz</td><td class="num">~0.03 Mbps</td></tr>
+            <tr><td><span class="inline-code">/imu</span></td><td class="num">320 B</td><td class="num">200 Hz</td><td class="num">~0.72 Mbps</td></tr>
+            <tr><td><span class="inline-code">/points/front</span></td><td class="num">2.72 MB</td><td class="num">20 Hz</td><td class="num">~435 Mbps</td></tr>
+            <tr><td><span class="inline-code">/points/rear</span></td><td class="num">644 KB</td><td class="num">20 Hz</td><td class="num">~103 Mbps</td></tr>
+            <tr><td><span class="inline-code">/camera/front/compressed</span></td><td class="num">150 KB</td><td class="num">30 Hz</td><td class="num">~36 Mbps</td></tr>
+            <tr><td><span class="inline-code">/camera/left/compressed</span></td><td class="num">150 KB</td><td class="num">30 Hz</td><td class="num">~36 Mbps</td></tr>
+            <tr><td><span class="inline-code">/camera/right/compressed</span></td><td class="num">150 KB</td><td class="num">30 Hz</td><td class="num">~36 Mbps</td></tr>
+            <tr><td><span class="inline-code">/camera/rear/compressed</span></td><td class="num">150 KB</td><td class="num">30 Hz</td><td class="num">~36 Mbps</td></tr>
+            <tr><td><span class="inline-code">/depth/image_raw</span></td><td class="num">600 KB</td><td class="num">30 Hz</td><td class="num">~147 Mbps</td></tr>
+            <tr class="total"><td>Total</td><td class="num"></td><td class="num"></td><td class="num">~830 Mbps</td></tr>
+          </tbody>
+        </table>
+        <p class="exp-cap"><strong>S7 composite breakdown.</strong> A multi-sensor mix of teleoperation, IMU, two LiDARs, four cameras, and a depth stream, totaling ~830&nbsp;Mbps.</p>
+
+        <div class="spacer" style="height: 24px;"></div>
+        <div class="exp-fig">
+          <img src="assets/exp4_results.png" alt="Matrix table of received bandwidth and subscriber drop rate across QoS and link conditions for seven scenarios: ros2probe tracks the baseline everywhere while the DDS tools inflate bandwidth and induce loss near saturation." loading="lazy" />
+        </div>
+        <p class="exp-cap"><strong>Received bandwidth (BW, Mbps) and subscriber drop rate (Loss, %) across the 2×2 link × QoS matrix.</strong> rp hz / rp bag match the baseline in every cell, while the DDS tools roughly double the bandwidth and drive loss to 38.5% (ros2 hz) and 75.5% (rosbag2) at the saturating wired S7.</p>
       </div>
     </div>
 
@@ -1147,16 +1244,14 @@
         <tr><th>Command</th><th>Description</th></tr>
       </thead>
       <tbody>
-        <tr><td><span class="inline-code">rp run</span></td><td>Start the runtime daemon (auto-escalates to root if needed)</td></tr>
-        <tr><td><span class="inline-code">rp gui</span></td><td>Launch the desktop GUI</td></tr>
-        <tr><td><span class="inline-code">rp topic list</span></td><td>List topics with recordable / internal separation</td></tr>
-        <tr><td><span class="inline-code">rp topic hz &lt;topic&gt;</span></td><td>Live publish rate (mean / min / max / stddev)</td></tr>
-        <tr><td><span class="inline-code">rp topic bw &lt;topic&gt;</span></td><td>Live bandwidth</td></tr>
-        <tr><td><span class="inline-code">rp topic delay &lt;topic&gt;</span></td><td>End-to-end delay from header.stamp</td></tr>
-        <tr><td><span class="inline-code">rp topic echo &lt;topic&gt;</span></td><td>Stream decoded messages (rclpy-backed)</td></tr>
-        <tr><td><span class="inline-code">rp bag record [TOPICS…]</span></td><td>Record MCAP bag · zstd / lz4 / none</td></tr>
-        <tr><td><span class="inline-code">rp node list · info</span></td><td>Discovered nodes and their endpoints</td></tr>
-        <tr><td><span class="inline-code">rp discover</span></td><td>Force ros_discovery_info broadcast (SHM-aware shadow mode)</td></tr>
+        <tr><td><span class="inline-code">rp run</span></td><td>Start the ros2probe runtime daemon</td></tr>
+        <tr><td><span class="inline-code">rp gui</span></td><td>Launch the GUI</td></tr>
+        <tr><td><span class="inline-code">rp topic</span></td><td>Topic introspection — <span class="inline-code">list</span>, <span class="inline-code">hz</span>, <span class="inline-code">bw</span>, <span class="inline-code">delay</span>, <span class="inline-code">echo</span></td></tr>
+        <tr><td><span class="inline-code">rp node</span></td><td>Node introspection commands</td></tr>
+        <tr><td><span class="inline-code">rp service</span></td><td>Service introspection commands</td></tr>
+        <tr><td><span class="inline-code">rp action</span></td><td>Action introspection commands</td></tr>
+        <tr><td><span class="inline-code">rp bag</span></td><td>Bag recording commands — record an MCAP bag (zstd / lz4 / none)</td></tr>
+        <tr><td><span class="inline-code">rp discover</span></td><td>Force a <span class="inline-code">/ros_discovery_info</span> broadcast over UDP (SHM-aware shadow mode)</td></tr>
       </tbody>
     </table>
   </div>
@@ -1209,7 +1304,7 @@
           <tbody>
             <tr><td><span class="badge info">Linux 5.15+</span></td><td>eBPF socket filter, AF_PACKET TPACKET_V3</td></tr>
             <tr><td><span class="badge info">ROS 2 Humble+</span></td><td>Iron, Jazzy, Rolling also supported</td></tr>
-            <tr><td><span class="badge">Python 3 + rclpy</span></td><td>Only for <span class="inline-code">rp topic echo</span> / <span class="inline-code">delay</span></td></tr>
+            <tr><td><span class="badge">Python 3 + rclpy</span></td><td>Only for <span class="inline-code">rp topic echo</span></td></tr>
             <tr><td><span class="badge ok">Optional</span></td><td>Jumbo frames, DDS XML profile that avoids IP fragmentation</td></tr>
           </tbody>
         </table>
@@ -1224,16 +1319,18 @@
     <div class="section-head">
       <span class="kicker">Cite</span>
       <h2>If you use ros2probe in your research.</h2>
-      <p>BibTeX entry will be updated once the paper is accepted. Preprint citation below.</p>
+      <p>Read the preprint on <a href="https://arxiv.org/abs/2606.10746" target="_blank" rel="noopener">arXiv</a>, and use the BibTeX entry below.</p>
     </div>
     <div class="cite">
       <button class="cite-copy" onclick="copyFromId(this, 'bib')">copy</button>
-<pre style="margin: 0;" id="bib">@inproceedings{ros2probe2026,
-  title     = {ros2probe: Non-intrusive, Kernel-selective Observability for ROS 2 Middleware},
-  author    = {Yu, Jisang and Lee, Sanghoon and Park, Kyung-Joon and others},
-  booktitle = {ArXiv},
-  year      = {2026},
-  note      = {In preparation}
+<pre style="margin: 0;" id="bib">@misc{yu2026ros2probe,
+  title         = {ros2probe: Non-intrusive, Kernel-selective Observability for Robot Operating System 2 Middleware},
+  author        = {Jisang Yu and Sanghoon Lee and Yeonwoo Choi and Kyung-Joon Park},
+  year          = {2026},
+  eprint        = {2606.10746},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.RO},
+  url           = {https://arxiv.org/abs/2606.10746}
 }</pre>
     </div>
   </div>
@@ -1257,17 +1354,17 @@
         <h5>Project</h5>
         <ul>
           <li><a href="https://github.com/csi-dgist/ros2probe" target="_blank" rel="noopener">GitHub</a></li>
-          <li><a href="#" data-soon="Docs">Docs</a></li>
-          <li><a href="#" data-soon="Changelog">Changelog</a></li>
-          <li><a href="#" data-soon="Issues">Issues</a></li>
+          <li><a href="https://github.com/csi-dgist/ros2probe#readme" target="_blank" rel="noopener">Docs</a></li>
+          <li><a href="https://github.com/csi-dgist/ros2probe/releases" target="_blank" rel="noopener">Changelog</a></li>
+          <li><a href="https://github.com/csi-dgist/ros2probe/issues" target="_blank" rel="noopener">Issues</a></li>
         </ul>
       </div>
       <div>
         <h5>Research</h5>
         <ul>
-          <li><a href="#" data-soon="Preprint">Paper (preprint)</a></li>
-          <li><a href="#experiments">Experiments</a></li>
-          <li><a href="#cite">Cite</a></li>
+          <li><a href="https://arxiv.org/abs/2606.10746" target="_blank" rel="noopener">Paper (preprint)</a></li>
+          <li><a href="#architecture" onclick="document.querySelector('.tab[data-tab=experiments]').click()">Experiments</a></li>
+          <li><a href="#cite" onclick="copyCite(event)">Cite</a></li>
         </ul>
       </div>
       <div>
@@ -1325,6 +1422,20 @@
       const prev = btn.innerText;
       btn.innerText = 'copied';
       setTimeout(() => btn.innerText = prev, 1400);
+    });
+  }
+
+  // Footer "Cite" link — copy the BibTeX entry and confirm with the toast
+  function copyCite(e) {
+    if (e) e.preventDefault();
+    const el = document.getElementById('bib');
+    const toast = document.getElementById('soon-toast');
+    const msg = document.getElementById('soon-msg');
+    if (!el || !toast || !msg) return;
+    navigator.clipboard.writeText(el.innerText).then(() => {
+      msg.innerHTML = '<strong>BibTeX copied</strong> to your clipboard.';
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
     });
   }
 

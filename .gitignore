@@ -11,3 +11,10 @@
 *.synctex.gz
 *.fdb_latexmk
 *.fls
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

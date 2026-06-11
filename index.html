@@ -117,7 +117,7 @@
   .logo-mark {
     width: 28px; height: 28px; border-radius: 7px;
     background: linear-gradient(135deg, var(--accent), #0ea5e9);
-    display: grid; place-items: center; font-size: 13px; color: #041018; font-weight: 700;
+    display: grid; place-items: center; font-size: 13px; color: var(--btn-text); font-weight: 700;
   }
   .nav-links { display: flex; gap: 28px; font-size: 14px; color: var(--text-dim); }
   .nav-links a:hover { color: var(--text); }
@@ -180,7 +180,7 @@
     display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 16px; margin-top: 44px; padding: 20px;
     border: 1px solid var(--line-soft); border-radius: var(--radius-lg);
-    background: linear-gradient(180deg, rgba(23,33,53,0.6), rgba(17,26,44,0.2));
+    background: linear-gradient(180deg, var(--surface-2), var(--surface));
   }
   .meta-item .k { font-family: var(--mono); font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.08em; }
   .meta-item .v { margin-top: 4px; font-size: 15px; color: var(--text); }
@@ -538,10 +538,10 @@
     </div>
     <div class="nav-links">
       <a href="#overview">Overview</a>
+      <a href="#install">Install</a>
       <a href="#architecture" onclick="document.querySelector('.tab[data-tab=arch]').click()">Architecture</a>
       <a href="#architecture" onclick="document.querySelector('.tab[data-tab=paper]').click()">Paper</a>
-      <a href="#usage">Usage</a>
-      <a href="#install">Install</a>
+      <a href="#experiments">Experiments</a>
     </div>
     <div class="nav-right">
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle light / dark theme" title="Toggle theme">
@@ -562,7 +562,7 @@
       ros2probe is a middleware-level observability layer for ROS&nbsp;2. It taps wire traffic from the kernel network path, never creates a middleware participant, and reconstructs the full ROS graph, topic metrics, and message streams entirely in userspace. DDS is supported today. Zenoh is planned.
     </p>
     <div class="hero-actions">
-      <a class="btn btn-primary" href="#usage">Get started →</a>
+      <a class="btn btn-primary" href="#install">Get started →</a>
       <a class="btn btn-ghost" href="https://arxiv.org/abs/2606.10746" target="_blank" rel="noopener">Read the paper ↗</a>
       <a class="btn btn-ghost" href="https://github.com/csi-dgist/ros2probe" target="_blank" rel="noopener">View on GitHub ↗</a>
     </div>
@@ -659,6 +659,81 @@
   </div>
 </section>
 
+<!-- GET IT RUNNING -->
+<section id="install">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">Get it running</span>
+      <h2>Install.</h2>
+      <p>Just download and run.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 480px) 1fr; gap: 24px; align-items: start;">
+      <div style="display: flex; flex-direction: column; gap: 24px; min-width: 0;">
+
+        <!-- CLI only -->
+        <div>
+          <h3 style="font-size: 16px; margin: 0 0 6px;">CLI only</h3>
+          <div class="code-wrap">
+            <button class="code-copy" onclick="copyFromId(this, 'install-cli')">copy</button>
+            <pre class="code" id="install-cli"><span class="fn">curl</span> -fsSL https://github.com/csi-dgist/ros2probe/releases/latest/download/install.sh | sh</pre>
+          </div>
+        </div>
+
+        <!-- CLI + GUI -->
+        <div>
+          <h3 style="font-size: 16px; margin: 0 0 6px;">CLI + GUI <span style="color: var(--text-mute); font-size: 13px; font-weight: normal;">(x86-64 only)</span></h3>
+          <div class="code-wrap">
+            <button class="code-copy" onclick="copyFromId(this, 'install-gui')">copy</button>
+            <pre class="code" id="install-gui"><span class="fn">curl</span> -fsSL https://github.com/csi-dgist/ros2probe/releases/latest/download/install.sh | sh -s -- --gui</pre>
+          </div>
+        </div>
+
+        <!-- Uninstall -->
+        <div>
+          <h3 style="font-size: 16px; margin: 0 0 6px;">Uninstall</h3>
+          <div class="code-wrap">
+            <button class="code-copy" onclick="copyFromId(this, 'uninstall')">copy</button>
+            <pre class="code" id="uninstall"><span class="fn">sudo</span> rm /usr/local/bin/rp</pre>
+          </div>
+        </div>
+
+      </div>
+
+      <div>
+        <table class="matrix">
+          <thead><tr><th>Requirement</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge info">Linux 5.15+</span></td><td>eBPF socket filter, AF_PACKET TPACKET_V3</td></tr>
+            <tr><td><span class="badge info">ROS 2 Humble+</span></td><td>Iron, Jazzy, Rolling also supported</td></tr>
+            <tr><td><span class="badge">Python 3 + rclpy</span></td><td>Only for <span class="inline-code">rp topic echo</span></td></tr>
+            <tr><td><span class="badge ok">Optional</span></td><td>Jumbo frames, DDS XML profile that avoids IP fragmentation</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <h3 style="margin: 40px 0 14px; font-size: 18px;">CLI at a glance</h3>
+    <table class="matrix">
+      <thead>
+        <tr><th>Command</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="inline-code">rp run</span></td><td>Start the ros2probe runtime daemon</td></tr>
+        <tr><td><span class="inline-code">rp gui</span></td><td>Launch the GUI</td></tr>
+        <tr><td><span class="inline-code">rp topic</span></td><td>Topic introspection — <span class="inline-code">list</span>, <span class="inline-code">hz</span>, <span class="inline-code">bw</span>, <span class="inline-code">delay</span>, <span class="inline-code">echo</span></td></tr>
+        <tr><td><span class="inline-code">rp node</span></td><td>Node introspection commands</td></tr>
+        <tr><td><span class="inline-code">rp service</span></td><td>Service introspection commands</td></tr>
+        <tr><td><span class="inline-code">rp action</span></td><td>Action introspection commands</td></tr>
+        <tr><td><span class="inline-code">rp bag</span></td><td>Bag recording commands — record an MCAP bag (zstd / lz4 / none)</td></tr>
+        <tr><td><span class="inline-code">rp discover</span></td><td>Force a <span class="inline-code">/ros_discovery_info</span> broadcast over UDP (SHM-aware shadow mode)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
 <!-- MAIN TABS -->
 <section id="architecture">
   <div class="container">
@@ -671,10 +746,9 @@
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" data-tab="arch" aria-selected="true">01 · Architecture</button>
       <button class="tab" role="tab" data-tab="features" aria-selected="false">02 · Features</button>
-      <button class="tab" role="tab" data-tab="demo" aria-selected="false">03 · Live Demo</button>
+      <button class="tab" role="tab" data-tab="demo" aria-selected="false">03 · In Practice</button>
       <button class="tab" role="tab" data-tab="compare" aria-selected="false">04 · vs Other Tools</button>
       <button class="tab" role="tab" data-tab="paper" aria-selected="false">05 · Research</button>
-      <button class="tab" role="tab" data-tab="experiments" aria-selected="false">06 · Experiments</button>
     </div>
 
     <!-- TAB: Architecture -->
@@ -877,6 +951,45 @@
 
       <h3 style="margin: 28px 0 12px; font-size: 17px;">4. Open the desktop UI</h3>
 <pre class="code"><span class="fn">rp</span> gui</pre>
+
+      <div class="spacer"></div>
+
+      <h3 style="margin: 40px 0 6px; font-size: 18px;">Same data, two interfaces</h3>
+      <p style="color: var(--text-dim); margin: 0 0 18px; max-width: 820px;">Scripts talk to <span class="inline-code">rp</span> over a Unix socket. Humans get a GUI with a dashboard, a topic monitor, and a bag recorder.</p>
+
+      <div class="gallery">
+        <div>
+          <div class="media-frame">
+            <img class="media media-screen" src="assets/dashboard.png" alt="ros2probe Dashboard page" loading="lazy" />
+          </div>
+          <p style="color: var(--text-mute); font-size: 13px; font-family: var(--mono); margin-top: 8px; text-align: center;">rp gui → Dashboard</p>
+        </div>
+        <div>
+          <div class="media-frame">
+            <img class="media media-screen" src="assets/topic-monitor1.png" alt="ros2probe Topic Monitor page 1" loading="lazy" />
+          </div>
+          <p style="color: var(--text-mute); font-size: 13px; font-family: var(--mono); margin-top: 8px; text-align: center;">rp gui → Topic Monitor 1</p>
+        </div>
+        <div>
+          <div class="media-frame">
+            <img class="media media-screen" src="assets/topic-monitor2.png" alt="ros2probe Topic Monitor page 2" loading="lazy" />
+          </div>
+          <p style="color: var(--text-mute); font-size: 13px; font-family: var(--mono); margin-top: 8px; text-align: center;">rp gui → Topic Monitor 2</p>
+        </div>
+        <div>
+          <div class="media-frame">
+            <img class="media media-screen" src="assets/bag-recorder1.png" alt="ros2probe Bag Recorder page 1" loading="lazy" />
+          </div>
+          <p style="color: var(--text-mute); font-size: 13px; font-family: var(--mono); margin-top: 8px; text-align: center;">rp gui → Bag Recorder 1</p>
+        </div>
+        <div>
+          <div class="media-frame">
+            <img class="media media-screen" src="assets/bag-recorder2.png" alt="ros2probe Bag Recorder page 2" loading="lazy" />
+          </div>
+          <p style="color: var(--text-mute); font-size: 13px; font-family: var(--mono); margin-top: 8px; text-align: center;">rp gui → Bag Recorder 2</p>
+        </div>
+      </div>
+
     </div>
 
     <!-- TAB: Compare -->
@@ -1081,13 +1194,21 @@
       </div>
     </div>
 
-    <!-- TAB: Experiments -->
-    <div class="tab-panel" data-tab="experiments">
-      <p style="color: var(--text-dim); max-width: 820px; margin: 0 0 28px;">
+  </div>
+</section>
+
+<!-- EXPERIMENTS -->
+<section id="experiments">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">Evidence</span>
+      <h2>Real hardware, real numbers.</h2>
+      <p>
         Four experiments on a real cross-host testbed (a publisher laptop with a laptop, an NVIDIA Jetson Orin&nbsp;NX,
         and a Raspberry Pi&nbsp;4B as receivers) on Ubuntu&nbsp;22.04 (Linux&nbsp;5.15) and ROS&nbsp;2 Humble.
         Quantitative results use FastDDS&nbsp;2.6.11, and ros2probe runs unmodified on CycloneDDS&nbsp;0.10.5 as well.
       </p>
+    </div>
 
       <div class="exp-block">
         <div class="exp">
@@ -1189,127 +1310,7 @@
         </div>
         <p class="exp-cap"><strong>Received bandwidth (BW, Mbps) and subscriber drop rate (Loss, %) across the 2×2 link × QoS matrix.</strong> rp hz / rp bag match the baseline in every cell, while the DDS tools roughly double the bandwidth and drive loss to 38.5% (ros2 hz) and 75.5% (rosbag2) at the saturating wired S7.</p>
       </div>
-    </div>
 
-  </div>
-</section>
-
-<!-- USAGE SNAPSHOT -->
-<section id="usage">
-  <div class="container">
-    <div class="section-head">
-      <span class="kicker">In practice</span>
-      <h2>Same data, two interfaces.</h2>
-      <p>Scripts talk to <span class="inline-code">rp</span> over a Unix socket. Humans get a GUI with a dashboard, a topic monitor, and a bag recorder.</p>
-    </div>
-
-    <div class="gallery">
-      <div>
-        <div class="media-frame">
-          <img class="media media-screen" src="assets/dashboard.png" alt="ros2probe Dashboard page" loading="lazy" />
-        </div>
-        <p style="color: var(--text-mute); font-size: 13px; font-family: var(--mono); margin-top: 8px; text-align: center;">rp gui → Dashboard</p>
-      </div>
-      <div>
-        <div class="media-frame">
-          <img class="media media-screen" src="assets/topic-monitor1.png" alt="ros2probe Topic Monitor page 1" loading="lazy" />
-        </div>
-        <p style="color: var(--text-mute); font-size: 13px; font-family: var(--mono); margin-top: 8px; text-align: center;">rp gui → Topic Monitor 1</p>
-      </div>
-      <div>
-        <div class="media-frame">
-          <img class="media media-screen" src="assets/topic-monitor2.png" alt="ros2probe Topic Monitor page 2" loading="lazy" />
-        </div>
-        <p style="color: var(--text-mute); font-size: 13px; font-family: var(--mono); margin-top: 8px; text-align: center;">rp gui → Topic Monitor 2</p>
-      </div>
-      <div>
-        <div class="media-frame">
-          <img class="media media-screen" src="assets/bag-recorder1.png" alt="ros2probe Bag Recorder page 1" loading="lazy" />
-        </div>
-        <p style="color: var(--text-mute); font-size: 13px; font-family: var(--mono); margin-top: 8px; text-align: center;">rp gui → Bag Recorder 1</p>
-      </div>
-      <div>
-        <div class="media-frame">
-          <img class="media media-screen" src="assets/bag-recorder2.png" alt="ros2probe Bag Recorder page 2" loading="lazy" />
-        </div>
-        <p style="color: var(--text-mute); font-size: 13px; font-family: var(--mono); margin-top: 8px; text-align: center;">rp gui → Bag Recorder 2</p>
-      </div>
-    </div>
-
-    <div class="spacer"></div>
-
-    <h3 style="margin: 40px 0 14px; font-size: 18px;">CLI at a glance</h3>
-    <table class="matrix">
-      <thead>
-        <tr><th>Command</th><th>Description</th></tr>
-      </thead>
-      <tbody>
-        <tr><td><span class="inline-code">rp run</span></td><td>Start the ros2probe runtime daemon</td></tr>
-        <tr><td><span class="inline-code">rp gui</span></td><td>Launch the GUI</td></tr>
-        <tr><td><span class="inline-code">rp topic</span></td><td>Topic introspection — <span class="inline-code">list</span>, <span class="inline-code">hz</span>, <span class="inline-code">bw</span>, <span class="inline-code">delay</span>, <span class="inline-code">echo</span></td></tr>
-        <tr><td><span class="inline-code">rp node</span></td><td>Node introspection commands</td></tr>
-        <tr><td><span class="inline-code">rp service</span></td><td>Service introspection commands</td></tr>
-        <tr><td><span class="inline-code">rp action</span></td><td>Action introspection commands</td></tr>
-        <tr><td><span class="inline-code">rp bag</span></td><td>Bag recording commands — record an MCAP bag (zstd / lz4 / none)</td></tr>
-        <tr><td><span class="inline-code">rp discover</span></td><td>Force a <span class="inline-code">/ros_discovery_info</span> broadcast over UDP (SHM-aware shadow mode)</td></tr>
-      </tbody>
-    </table>
-  </div>
-</section>
-
-<!-- INSTALL -->
-<section id="install">
-  <div class="container">
-    <div class="section-head">
-      <span class="kicker">Get it running</span>
-      <h2>Install.</h2>
-      <p>Just download and run.</p>
-    </div>
-
-    <div style="display: grid; grid-template-columns: minmax(0, 480px) 1fr; gap: 24px; align-items: start;">
-      <div style="display: flex; flex-direction: column; gap: 24px; min-width: 0;">
-
-        <!-- CLI only -->
-        <div>
-          <h3 style="font-size: 16px; margin: 0 0 6px;">CLI only</h3>
-          <div class="code-wrap">
-            <button class="code-copy" onclick="copyFromId(this, 'install-cli')">copy</button>
-            <pre class="code" id="install-cli"><span class="fn">curl</span> -fsSL https://github.com/csi-dgist/ros2probe/releases/latest/download/install.sh | sh</pre>
-          </div>
-        </div>
-
-        <!-- CLI + GUI -->
-        <div>
-          <h3 style="font-size: 16px; margin: 0 0 6px;">CLI + GUI <span style="color: var(--text-mute); font-size: 13px; font-weight: normal;">(x86-64 only)</span></h3>
-          <div class="code-wrap">
-            <button class="code-copy" onclick="copyFromId(this, 'install-gui')">copy</button>
-            <pre class="code" id="install-gui"><span class="fn">curl</span> -fsSL https://github.com/csi-dgist/ros2probe/releases/latest/download/install.sh | sh -s -- --gui</pre>
-          </div>
-        </div>
-
-        <!-- Uninstall -->
-        <div>
-          <h3 style="font-size: 16px; margin: 0 0 6px;">Uninstall</h3>
-          <div class="code-wrap">
-            <button class="code-copy" onclick="copyFromId(this, 'uninstall')">copy</button>
-            <pre class="code" id="uninstall"><span class="fn">sudo</span> rm /usr/local/bin/rp</pre>
-          </div>
-        </div>
-
-      </div>
-
-      <div>
-        <table class="matrix">
-          <thead><tr><th>Requirement</th><th>Notes</th></tr></thead>
-          <tbody>
-            <tr><td><span class="badge info">Linux 5.15+</span></td><td>eBPF socket filter, AF_PACKET TPACKET_V3</td></tr>
-            <tr><td><span class="badge info">ROS 2 Humble+</span></td><td>Iron, Jazzy, Rolling also supported</td></tr>
-            <tr><td><span class="badge">Python 3 + rclpy</span></td><td>Only for <span class="inline-code">rp topic echo</span></td></tr>
-            <tr><td><span class="badge ok">Optional</span></td><td>Jumbo frames, DDS XML profile that avoids IP fragmentation</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -1363,7 +1364,7 @@
         <h5>Research</h5>
         <ul>
           <li><a href="https://arxiv.org/abs/2606.10746" target="_blank" rel="noopener">Paper (preprint)</a></li>
-          <li><a href="#architecture" onclick="document.querySelector('.tab[data-tab=experiments]').click()">Experiments</a></li>
+          <li><a href="#experiments">Experiments</a></li>
           <li><a href="#cite" onclick="copyCite(event)">Cite</a></li>
         </ul>
       </div>

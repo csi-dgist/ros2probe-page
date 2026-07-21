@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ros2probe · Non-intrusive Observability for ROS 2</title>
-<meta name="description" content="ros2probe: passive, kernel-selective observability for ROS 2. No middleware participants, no process restarts, no Observer Effect. DDS today, Zenoh planned." />
+<meta name="description" content="ros2probe: passive, kernel-selective observability for ROS 2. No middleware participants, no process restarts, no Observer Effect. DDS and Zenoh supported." />
 <style>
   :root,
   :root[data-theme="dark"] {
@@ -556,10 +556,10 @@
 <!-- HERO -->
 <section class="hero">
   <div class="container">
-    <span class="eyebrow"><span class="dot"></span>Middleware-agnostic · DDS today · Zenoh planned</span>
+    <span class="eyebrow"><span class="dot"></span>Middleware-agnostic · DDS and Zenoh</span>
     <h1 class="headline"><span class="grad">ros2probe</span>: Observe ROS&nbsp;2 without being observed.</h1>
     <p class="subhead">
-      ros2probe is a middleware-level observability layer for ROS&nbsp;2. It taps wire traffic from the kernel network path, never creates a middleware participant, and reconstructs the full ROS graph, topic metrics, and message streams entirely in userspace. DDS is supported today. Zenoh is planned.
+      ros2probe is a middleware-level observability layer for ROS&nbsp;2. It taps wire traffic from the kernel network path, never creates a middleware participant, and reconstructs the full ROS graph, topic metrics, and message streams entirely in userspace. DDS and Zenoh are supported.
     </p>
     <div class="hero-actions">
       <a class="btn btn-primary" href="#install">Get started →</a>
@@ -582,7 +582,7 @@
       </div>
       <div class="meta-item">
         <div class="k">Supported</div>
-        <div class="v">DDS (incl. Fast · Cyclone)<span style="display:block; color: var(--text-mute); font-size: 12px; margin-top: 2px;">Zenoh planned</span></div>
+        <div class="v">DDS (FastDDS, CycloneDDS), Zenoh</div>
       </div>
       <div class="meta-item">
         <div class="k">License</div>
@@ -616,8 +616,8 @@
       </div>
       <div class="problem">
         <span class="no">Problem 02</span>
-        <h3>ros2 topic hz / echo / bw</h3>
-        <p>Creates a new subscriber just to observe. Triggers QoS negotiation, injects receive-side load, and appears in <span class="inline-code">ros2 topic list</span>. The act of measurement deforms the system.</p>
+        <h3>ros2cli topic tools</h3>
+        <p>Tools like ros2 topic hz, ros2 topic echo, and ros2 topic bw each create new subscribers just to observe. They trigger QoS negotiation, inject receive-side load, and expose the observer in ros2 topic list. The act of measurement deforms the system.</p>
       </div>
       <div class="problem">
         <span class="no">Problem 03</span>
@@ -631,7 +631,7 @@
     <div class="section-head" style="margin-top: 48px;">
       <span class="kicker">Our approach</span>
       <h2>A participant-free wire tap with adaptive visibility.</h2>
-      <p>ros2probe sits outside the middleware runtime. It reads wire frames at the kernel network path, filters them on a session-driven endpoint whitelist, and falls back gracefully when IP fragmentation or shared-memory transports get in the way. Today we parse the RTPS wire format for DDS; the same architecture will absorb the Zenoh wire format as a parser plug-in.</p>
+      <p>ros2probe sits outside the middleware runtime. It reads wire frames at the kernel network path, filters them on a session-driven endpoint whitelist, and falls back gracefully when IP fragmentation or shared-memory transports get in the way. It currently parses RTPS and Zenoh wire formats using the same capture pipeline and parser-layer architecture.</p>
     </div>
 
     <div class="contrib-grid">
@@ -648,12 +648,12 @@
       <div class="contrib">
         <span class="tag">C3</span>
         <h3>Discovery Race-free Selectivity</h3>
-        <p>Data-centric, event-driven GID synchronisation: each SEDP announcement immediately updates the kernel whitelist. RTPS protocol ordering guarantees the GID is registered before any DATA can arrive, eliminating races without a time-based window.</p>
+        <p>Data-centric, event-driven endpoint synchronisation: each discovery announcement immediately updates the kernel whitelist. Protocol ordering guarantees discovery state is registered before data payload processing begins, eliminating races without a time-based window.</p>
       </div>
       <div class="contrib">
         <span class="tag">C4</span>
         <h3>Adaptive Visibility</h3>
-        <p>The main observer stays zero-participant. When the user explicitly observes a shared-memory topic, ros2probe spawns a short-lived, namespace-isolated subprocess that joins the DDS domain only inside its mount namespace. The runtime itself never becomes a middleware participant.</p>
+        <p>The main observer stays zero-participant. When the user explicitly observes a shared-memory topic, ros2probe spawns a short-lived, namespace-isolated subprocess that joins only the selected middleware domain inside its mount namespace. The runtime itself never becomes a middleware participant.</p>
       </div>
     </div>
   </div>
@@ -705,9 +705,9 @@
           <thead><tr><th>Requirement</th><th>Notes</th></tr></thead>
           <tbody>
             <tr><td><span class="badge info">Linux 5.15+</span></td><td>eBPF socket filter, AF_PACKET TPACKET_V3</td></tr>
-            <tr><td><span class="badge info">ROS 2 Humble+</span></td><td>Iron, Jazzy, Rolling also supported</td></tr>
+            <tr><td><span class="badge info">ROS 2 Humble+</span></td><td>Jazzy also supported</td></tr>
             <tr><td><span class="badge">Python 3 + rclpy</span></td><td>Only for <span class="inline-code">rp topic echo</span></td></tr>
-            <tr><td><span class="badge ok">Optional</span></td><td>Jumbo frames, DDS XML profile that avoids IP fragmentation</td></tr>
+            <tr><td><span class="badge ok">Optional</span></td><td>Jumbo frames and transport settings that avoid IP fragmentation</td></tr>
           </tbody>
         </table>
       </div>
@@ -728,7 +728,7 @@
         <tr><td><span class="inline-code">rp service</span></td><td>Service introspection commands</td></tr>
         <tr><td><span class="inline-code">rp action</span></td><td>Action introspection commands</td></tr>
         <tr><td><span class="inline-code">rp bag</span></td><td>Bag recording commands — record an MCAP bag (zstd / lz4 / none)</td></tr>
-        <tr><td><span class="inline-code">rp discover</span></td><td>Force a <span class="inline-code">/ros_discovery_info</span> broadcast over UDP (SHM-aware shadow mode)</td></tr>
+            <tr><td><span class="inline-code">rp discover</span></td><td>Force an immediate discovery-state rebroadcast/re-sync (SHM-aware shadow mode)</td></tr>
       </tbody>
     </table>
   </div>
@@ -769,18 +769,18 @@
 <span class="hl">│</span>  rmw abstraction      &lt;-- CARET            <span class="hl">│</span>
 <span class="hl">├────────────────────────────────────────────┤</span>
 <span class="hl">│</span>  Middleware runtime                        <span class="hl">│</span>
-<span class="hl">│</span>  (FastDDS, CycloneDDS ...)                 <span class="hl">│</span>
+<span class="hl">│</span>  (DDS / Zenoh runtime ...)                 <span class="hl">│</span>
 <span class="hl">│</span>    participants / readers / writers        <span class="hl">│</span>
 <span class="hl">│</span>                       &lt;-- ros2 topic echo  <span class="hl">│</span>
 <span class="hl">│</span>                           rosbag2          <span class="hl">│</span>
-<span class="hl">│</span>                           ddsrecorder      <span class="hl">│</span>
-<span class="hl">│</span>                           FastDDS Stats    <span class="hl">│</span>
+<span class="hl">│</span>                           recorder tooling  <span class="hl">│</span>
+<span class="hl">│</span>                           transport stats  <span class="hl">│</span>
 <span class="hl">├────────────────────────────────────────────┤</span>
 <span class="hl">│</span>  Wire protocol                             <span class="hl">│</span>
-<span class="hl">│</span>  RTPS  (Zenoh: planned)                    <span class="hl">│</span>
+<span class="hl">│</span>  RTPS / Zenoh Protocol                      <span class="hl">│</span>
 <span class="hl">├────────────────────────────────────────────┤</span>
 <span class="hl">│</span>  Kernel network stack                      <span class="hl">│</span>
-<span class="hl">│</span>  UDP / IPv4 / IPv6 / NIC                   <span class="hl">│</span>
+<span class="hl">│</span>  TCP / UDP / IPv4 / IPv6 / NIC             <span class="hl">│</span>
 <span class="hl">│</span>                                            <span class="hl">│</span>
 <span class="hl">│</span>    <span class="hl">eBPF socket filter</span>  &lt;-- <span class="hl">ros2probe</span>       <span class="hl">│</span>
 <span class="hl">│</span>    zero-copy ring buf                      <span class="hl">│</span>
@@ -804,7 +804,7 @@
          ▲                          ▲
  ┌───────┴───────┐          ┌───────┴───────┐
  │ Middleware    │          │ ros2probe     │
- │ (FastDDS...)  │          │ daemon        │
+ │ (DDS / Zenoh) │          │ daemon        │
  └───────┬───────┘          └───────┬───────┘
          ▲                          ▲
  ┌───────┴───────┐          ┌───────┴───────┐
@@ -830,7 +830,7 @@
         <div class="arch-layer">
           <div class="lvl">The others · inline</div>
           <h4>Attach inside the stack</h4>
-          <p>ros2_tracing adds tracepoints in rclcpp / rcl. CARET wraps rmw with LD_PRELOAD. rosbag2, ros2 topic echo, ddsrecorder, and FastDDS Statistics all create endpoints in the middleware itself. Each becomes part of the stack being observed.</p>
+          <p>ros2_tracing adds tracepoints in rclcpp / rcl. CARET wraps rmw with LD_PRELOAD. rosbag2, ros2 topic echo, recorder tooling, and transport stats tools all create endpoints in the middleware itself. Each becomes part of the stack being observed.</p>
         </div>
         <div class="arch-layer">
           <div class="lvl">ros2probe · out of band</div>
@@ -846,17 +846,17 @@
         <div class="arch-layer">
           <div class="lvl">L1 · Capture</div>
           <h4>Zero-copy ring buffer, per-interface workers</h4>
-          <p>Kernel timestamps arrive with each frame. Loopback is included by default so intra-host UDP traffic is captured too.</p>
+          <p>Kernel timestamps arrive with each frame. Loopback is included by default so intra-host traffic is captured too.</p>
         </div>
         <div class="arch-layer">
           <div class="lvl">L2 · Wire decoder</div>
-          <h4>RTPS parser, fragment reassembly</h4>
-          <p>Vendor-neutral across DDS implementations. OMG RTPS is the only ABI. The Zenoh wire format will plug in at the same layer.</p>
+          <h4>DDS / Zenoh parser, fragment reassembly</h4>
+          <p>Vendor-neutral across DDS and Zenoh implementations. Protocol decoding is shared at the same layer, with format-specific parsers for RTPS and Zenoh.</p>
         </div>
         <div class="arch-layer">
           <div class="lvl">L3 · Graph reconstruction</div>
           <h4>Participants, endpoints, nodes, topics</h4>
-          <p>ros_discovery_info binds endpoint GUIDs to ROS node namespaces. TTL sweep keeps state fresh when nodes disappear.</p>
+          <p>For DDS, discovery packets (ros_discovery_info) bind endpoint GUIDs to ROS node namespaces. For Zenoh, equivalent discovery/control metadata is used to map peers, endpoints, and topics. TTL sweep keeps state fresh when nodes disappear.</p>
         </div>
         <div class="arch-layer">
           <div class="lvl">L4 · Applications</div>
@@ -877,7 +877,7 @@
         <div class="feature">
           <div class="icon">⇅</div>
           <h4>Full graph reconstruction</h4>
-          <p>Participants, endpoints, node names, pub/sub relationships, all derived from wire discovery and ros_discovery_info.</p>
+          <p>Participants, endpoints, node names, and pub/sub relationships are derived from wire-level discovery metadata and protocol-native control packets for each supported middleware.</p>
         </div>
         <div class="feature">
           <div class="icon">◉</div>
@@ -907,7 +907,7 @@
         <div class="feature">
           <div class="icon">⚡</div>
           <h4>Data-centric discovery sync</h4>
-          <p>Each SEDP event immediately updates the kernel GID whitelist. RTPS protocol ordering ensures the GID is registered before DATA arrives, with no time-based window needed.</p>
+          <p>Each discovery event immediately updates the kernel whitelist. Protocol ordering ensures discovery state is registered before related payloads are processed, with no time-based window needed.</p>
         </div>
         <div class="feature">
           <div class="icon">⌖</div>
@@ -939,8 +939,8 @@
 <span class="fn">rp</span> run</pre>
       <p style="margin: 14px 0 0; padding: 12px 16px; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 6px; color: var(--text-dim); max-width: 820px;">
         <strong style="color: var(--text);">Run <span class="inline-code">rp run</span> first, then launch your ROS&nbsp;2 nodes.</strong>
-        The runtime needs to be observing before the participants announce themselves so it can capture their discovery traffic.
-        If you started <span class="inline-code">rp run</span> <em>after</em> some nodes were already up, run <span class="inline-code">rp discover</span> to force a <span class="inline-code">/ros_discovery_info</span> re-broadcast and pick up the existing graph.
+        The runtime needs to be observing before the participants announce themselves so it can capture discovery traffic.
+        If you start <span class="inline-code">rp run</span> after nodes are already up, run <span class="inline-code">rp discover</span> to trigger a one-shot discovery sync for the existing graph.
       </p>
 
       <h3 style="margin: 28px 0 12px; font-size: 17px;">2. Observe topics without touching the graph</h3>
@@ -1002,7 +1002,7 @@
       <p style="color: var(--text-dim); max-width: 820px; margin: 0 0 20px;">
         <strong style="color: var(--text);">Not all of these tools are built for the same thing.</strong>
         ros2_tracing and CARET are <em>performance-analysis</em> tools for callback chains and executors.
-        rosbag2 and ddsrecorder are <em>loggers</em>. ros2 daemon is a <em>CLI cache</em>.
+        rosbag2 and recorder tooling are <em>loggers</em>. ros2 daemon is a <em>CLI cache</em>.
         Wireshark is a <em>general-purpose packet tool</em>, passive but ROS&nbsp;2-unaware,
         so it cannot reconstruct the topic graph and its cost grows with total traffic, not with what you observe.
         ros2probe aims at <em>live middleware-level observation</em>. The table below makes this explicit in the first row.
@@ -1029,7 +1029,7 @@
             <td style="font-size: 12.5px; color: var(--text-dim);">Message logging</td>
             <td style="font-size: 12.5px; color: var(--text-dim);">Callback / executor tracing</td>
             <td style="font-size: 12.5px; color: var(--text-dim);">E2E callback-chain latency</td>
-            <td style="font-size: 12.5px; color: var(--text-dim);">Packet-level RTPS inspection</td>
+            <td style="font-size: 12.5px; color: var(--text-dim);">Packet-level protocol inspection</td>
             <td style="font-size: 12.5px; color: var(--text);"><strong>Live middleware-level observation</strong></td>
           </tr>
           <tr>
@@ -1129,9 +1129,9 @@
           <p style="color: var(--accent); font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 12px;">Abstract</p>
           <p>
             Robot Operating System 2&nbsp;(ROS&nbsp;2), the de facto standard middleware framework for robots, runs each
-            robot as a graph of nodes communicating over the Data Distribution Service&nbsp;(DDS), a publish/subscribe
-            substrate. Observing this inter-node communication in real time is essential to robot development, yet
-            observing it has a price. A tool can receive data only by joining the DDS domain as a subscriber that
+            robot as a graph of nodes communicating over middleware transport stacks (DDS in current releases, Zenoh supported in newer
+            releases), a publish/subscribe substrate. Observing this inter-node communication in real time is essential to robot development, yet
+            observing it has a price. A tool can receive data only by joining the middleware domain as a subscriber that
             discovery has matched to the publisher, so the act of observing folds the tool into the system it measures
             and perturbs it.
           </p>
@@ -1151,7 +1151,7 @@
           </p>
           <p>
             Across three hardware platforms (laptop, Jetson, and Raspberry Pi), two DDS implementations, and seven
-            robot-operation workloads, ros2probe holds the discovery graph within 0.5% of an unobserved system, whereas
+            robot-operation workloads (DDS-focused evaluation), ros2probe holds the discovery graph within 0.5% of an unobserved system, whereas
             domain-joining tools inflate discovery up to 2.6&times; and drop 38.5% of the subscriber's messages at
             saturation while ros2probe drops none. It reports loss with a recall of 1.0, cuts observer CPU and memory by
             up to 7&times; and 28&times;, and stays practical on the embedded robots where existing tools overload the
@@ -1163,7 +1163,7 @@
           <div class="row"><span class="k">Status</span><span class="v">Preprint · arXiv 2026</span></div>
           <div class="row"><span class="k">Track</span><span class="v">Middleware / systems</span></div>
           <div class="row"><span class="k">Artifacts</span><span class="v">Open-source runtime + CLI + GUI</span></div>
-          <div class="row"><span class="k">Supported</span><span class="v">FastDDS, CycloneDDS</span></div>
+          <div class="row"><span class="k">Supported</span><span class="v">FastDDS, CycloneDDS (paper scope) · Zenoh (v0.2.0+)</span></div>
           <div class="row"><span class="k">Platform</span><span class="v">Linux 5.15+ · x86_64 · aarch64</span></div>
 
           <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
@@ -1189,12 +1189,12 @@
         <div class="contrib">
           <span class="tag">C3</span>
           <h3>Discovery Race-free Selectivity</h3>
-          <p>Data-centric, event-driven GID synchronisation: each SEDP announcement immediately updates the kernel whitelist. RTPS protocol ordering structurally prevents discovery-vs-data races.</p>
+          <p>Data-centric, event-driven endpoint synchronisation: each discovery announcement immediately updates the kernel whitelist. Protocol ordering structurally prevents discovery-vs-data races.</p>
         </div>
         <div class="contrib">
           <span class="tag">C4</span>
           <h3>Adaptive Visibility</h3>
-          <p>The main observer stays zero-participant. SHM-only topics become visible on demand: ros2probe launches a short-lived subprocess inside an isolated mount namespace, and only that subprocess joins the DDS domain. The runtime itself never registers as a middleware participant.</p>
+          <p>The main observer stays zero-participant. SHM-only topics become visible on demand: ros2probe launches a short-lived subprocess inside an isolated mount namespace, and only that subprocess joins the selected middleware domain. The runtime itself never registers as a middleware participant.</p>
         </div>
       </div>
     </div>
@@ -1211,7 +1211,7 @@
       <p>
         Four experiments on a real cross-host testbed (a publisher laptop with a laptop, an NVIDIA Jetson Orin&nbsp;NX,
         and a Raspberry Pi&nbsp;4B as receivers) on Ubuntu&nbsp;22.04 (Linux&nbsp;5.15) and ROS&nbsp;2 Humble.
-        Quantitative results use FastDDS&nbsp;2.6.11, and ros2probe runs unmodified on CycloneDDS&nbsp;0.10.5 as well.
+        Quantitative results are from DDS-focused tests using FastDDS&nbsp;2.6.11 and CycloneDDS&nbsp;0.10.5.
       </p>
     </div>
 
@@ -1219,7 +1219,7 @@
         <div class="exp">
           <div class="ex-no">Experiment 01</div>
           <h4>Discovery transparency</h4>
-          <p>SPDP / SEDP / Control discovery messages with every participant both publisher and subscriber, sweeping the participant count NP&nbsp;∈&nbsp;{1,&nbsp;3,&nbsp;5}, averaged over 10 runs. ros2probe creates no DDS participant, so it should leave the discovery graph untouched.</p>
+          <p>SPDP / SEDP / Control discovery messages with every participant both publisher and subscriber, sweeping the participant count NP&nbsp;∈&nbsp;{1,&nbsp;3,&nbsp;5}, averaged over 10 runs. ros2probe creates no DDS participant, so it should leave the DDS discovery graph untouched.</p>
           <div class="vs">baseline · rp run · vs ros2 daemon</div>
         </div>
         <div class="exp-fig">
@@ -1238,7 +1238,7 @@
         <div class="exp-fig">
           <img src="assets/exp2_results.png" alt="Bar charts of observer-process CPU and memory under rate measurement and recording across laptop, Jetson, and Raspberry Pi, showing ros2probe far below the ros2 tools." loading="lazy" />
         </div>
-        <p class="exp-cap"><strong>Observer CPU and memory under rate measurement (a, b) and recording (c, d).</strong> rp hz parses only RTPS headers, cutting observer memory by up to 28× (1.7–3.9&nbsp;MB versus ~46&nbsp;MB for ros2 hz) and CPU by up to 7×. The gap turns from efficiency into feasibility on the embedded platforms.</p>
+        <p class="exp-cap"><strong>Observer CPU and memory under rate measurement (a, b) and recording (c, d).</strong> rp hz parses only discovery/data headers in this DDS-focused benchmark, cutting observer memory by up to 28× (1.7–3.9&nbsp;MB versus ~46&nbsp;MB for ros2 hz) and CPU by up to 7×. The gap turns from efficiency into feasibility on the embedded platforms.</p>
       </div>
 
       <div class="exp-block">

@@ -556,10 +556,10 @@
 <!-- HERO -->
 <section class="hero">
   <div class="container">
-    <span class="eyebrow"><span class="dot"></span>Middleware-agnostic · DDS and Zenoh</span>
+    <a class="eyebrow" href="https://github.com/csi-dgist/ros2probe/releases/tag/v0.2.0" target="_blank" rel="noopener"><span class="dot"></span>Latest release · v0.2.0</a>
     <h1 class="headline"><span class="grad">ros2probe</span>: Observe ROS&nbsp;2 without being observed.</h1>
     <p class="subhead">
-      ros2probe is a middleware-level observability layer for ROS&nbsp;2. It taps wire traffic from the kernel network path, never creates a middleware participant, and reconstructs the full ROS graph, topic metrics, and message streams entirely in userspace. DDS and Zenoh are supported.
+      ros2probe is a middleware-level observability layer for ROS&nbsp;2. It taps wire traffic from the kernel network path, never creates a middleware participant, and reconstructs the full ROS graph, topic metrics, and message streams entirely in userspace. The v0.2.0 release expands ros2probe with Zenoh observability over TCP and UDP.
     </p>
     <div class="hero-actions">
       <a class="btn btn-primary" href="#install">Get started →</a>
@@ -612,7 +612,7 @@
       <div class="problem">
         <span class="no">Problem 01</span>
         <h3>ros2 daemon</h3>
-        <p>Runs as a middleware participant to cache the graph, continuously participating in discovery. Contributes to <em>O(N²)</em> discovery traffic and exhibits graph-state inconsistency when nodes crash or networks partition.</p>
+        <p>Runs as a middleware participant to cache the graph, continuously participating in discovery. A full-mesh discovery domain scales as <em>O(N²)</em>, and adding the daemon contributes another participant with <em>O(N)</em> marginal discovery exchanges. Graph state can also become inconsistent when nodes crash or networks partition.</p>
       </div>
       <div class="problem">
         <span class="no">Problem 02</span>
@@ -653,7 +653,7 @@
       <div class="contrib">
         <span class="tag">C4</span>
         <h3>Adaptive Visibility</h3>
-        <p>The main observer stays zero-participant. When the user explicitly observes a shared-memory topic, ros2probe spawns a short-lived, namespace-isolated subprocess that joins only the selected middleware domain inside its mount namespace. The runtime itself never becomes a middleware participant.</p>
+        <p>On-demand SHM visibility uses a mount-namespace-isolated DDS helper with SHM disabled and a local non-SHM Zenoh subscriber.</p>
       </div>
     </div>
   </div>
@@ -706,7 +706,6 @@
           <tbody>
             <tr><td><span class="badge info">Linux 5.15+</span></td><td>eBPF socket filter, AF_PACKET TPACKET_V3</td></tr>
             <tr><td><span class="badge info">ROS 2 Humble+</span></td><td>Jazzy also supported</td></tr>
-            <tr><td><span class="badge">Python 3 + rclpy</span></td><td>Only for <span class="inline-code">rp topic echo</span></td></tr>
             <tr><td><span class="badge ok">Optional</span></td><td>Jumbo frames and transport settings that avoid IP fragmentation</td></tr>
           </tbody>
         </table>
@@ -728,7 +727,7 @@
         <tr><td><span class="inline-code">rp service</span></td><td>Service introspection commands</td></tr>
         <tr><td><span class="inline-code">rp action</span></td><td>Action introspection commands</td></tr>
         <tr><td><span class="inline-code">rp bag</span></td><td>Bag recording commands — record an MCAP bag (zstd / lz4 / none)</td></tr>
-            <tr><td><span class="inline-code">rp discover</span></td><td>Force an immediate discovery-state rebroadcast/re-sync (SHM-aware shadow mode)</td></tr>
+        <tr><td><span class="inline-code">rp discover</span></td><td>Refresh the graph using an RTPS discovery trigger and/or a local Zenoh liveliness query</td></tr>
       </tbody>
     </table>
   </div>
@@ -783,7 +782,7 @@
 <span class="hl">│</span>  TCP / UDP / IPv4 / IPv6 / NIC             <span class="hl">│</span>
 <span class="hl">│</span>                                            <span class="hl">│</span>
 <span class="hl">│</span>    <span class="hl">eBPF socket filter</span>  &lt;-- <span class="hl">ros2probe</span>       <span class="hl">│</span>
-<span class="hl">│</span>    zero-copy ring buf                      <span class="hl">│</span>
+<span class="hl">│</span>    TPACKET_V3 mmap ring                   <span class="hl">│</span>
 <span class="hl">└────────────────────────────────────────────┘</span>
 
   Every other tool  =  <span class="hl">inline attachment</span>
@@ -845,13 +844,13 @@
       <div class="arch-layers">
         <div class="arch-layer">
           <div class="lvl">L1 · Capture</div>
-          <h4>Zero-copy ring buffer, per-interface workers</h4>
+          <h4>Memory-mapped TPACKET_V3 ring, per-interface workers</h4>
           <p>Kernel timestamps arrive with each frame. Loopback is included by default so intra-host traffic is captured too.</p>
         </div>
         <div class="arch-layer">
           <div class="lvl">L2 · Wire decoder</div>
           <h4>DDS / Zenoh parser, fragment reassembly</h4>
-          <p>Vendor-neutral across DDS and Zenoh implementations. Protocol decoding is shared at the same layer, with format-specific parsers for RTPS and Zenoh.</p>
+          <p>Protocol decoding is shared at the same layer, with explicit wire-format parsers for DDS/RTPS and Zenoh rather than middleware symbol hooks.</p>
         </div>
         <div class="arch-layer">
           <div class="lvl">L3 · Graph reconstruction</div>
@@ -882,7 +881,7 @@
         <div class="feature">
           <div class="icon">◉</div>
           <h4>SHM topic visibility</h4>
-          <p>SHM-only topics are identified and made observable on demand via namespace-isolated shadow subscribers.</p>
+          <p>SHM-only topics are made observable on demand through a mount-namespace-isolated DDS helper or a non-SHM Zenoh subscriber.</p>
         </div>
         <div class="feature">
           <div class="icon">⟳</div>
@@ -911,8 +910,8 @@
         </div>
         <div class="feature">
           <div class="icon">⌖</div>
-          <h4>Vendor-neutral</h4>
-          <p>Wire-level observation only. No vendor-specific symbols, no middleware version coupling, no BTF/CO-RE fragility.</p>
+          <h4>Protocol-level decoding</h4>
+          <p>Wire-level parsers for DDS/RTPS and Zenoh avoid vendor-specific symbol hooks and BTF/CO-RE coupling.</p>
         </div>
       </div>
     </div>
@@ -937,10 +936,18 @@
       <h3 style="margin: 28px 0 12px; font-size: 17px;">1. Start the runtime</h3>
 <pre class="code"><span class="cm"># auto-escalates to root if needed (CAP_NET_ADMIN + CAP_NET_RAW)</span>
 <span class="fn">rp</span> run</pre>
+      <p style="color: var(--text-dim); margin: 14px 0 8px; max-width: 820px;">
+        Zenoh transport port <span class="inline-code">7447</span> is monitored for both TCP and UDP by default. Supplying the option replaces that default; list every port that should be monitored when a deployment uses custom or multiple ports.
+      </p>
+<pre class="code"><span class="cm"># monitor Zenoh traffic on both ports</span>
+<span class="fn">rp</span> run --zenoh-transport-port 7447 7448</pre>
       <p style="margin: 14px 0 0; padding: 12px 16px; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 6px; color: var(--text-dim); max-width: 820px;">
         <strong style="color: var(--text);">Run <span class="inline-code">rp run</span> first, then launch your ROS&nbsp;2 nodes.</strong>
         The runtime needs to be observing before the participants announce themselves so it can capture discovery traffic.
-        If you start <span class="inline-code">rp run</span> after nodes are already up, run <span class="inline-code">rp discover</span> to trigger a one-shot discovery sync for the existing graph.
+        If you start <span class="inline-code">rp run</span> after nodes are already up, run <span class="inline-code">rp discover</span> to trigger a one-shot discovery sync for the existing graph. For a Zenoh-only refresh, <span class="inline-code">rp discover --zenoh</span> queries a locally reachable TCP or UDP endpoint on the transport ports configured when the runtime started.
+      </p>
+      <p style="color: var(--text-mute); margin: 10px 0 0; max-width: 820px; font-size: 13px;">
+        Only unencrypted Zenoh TCP and UDP transports can be passively decoded. Encrypted transports such as TLS and QUIC are not supported.
       </p>
 
       <h3 style="margin: 28px 0 12px; font-size: 17px;">2. Observe topics without touching the graph</h3>
@@ -1129,9 +1136,9 @@
           <p style="color: var(--accent); font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 12px;">Abstract</p>
           <p>
             Robot Operating System 2&nbsp;(ROS&nbsp;2), the de facto standard middleware framework for robots, runs each
-            robot as a graph of nodes communicating over middleware transport stacks (DDS in current releases, Zenoh supported in newer
-            releases), a publish/subscribe substrate. Observing this inter-node communication in real time is essential to robot development, yet
-            observing it has a price. A tool can receive data only by joining the middleware domain as a subscriber that
+            robot as a graph of nodes communicating over the Data Distribution Service&nbsp;(DDS), a publish/subscribe substrate.
+            Observing this inter-node communication in real time is essential to robot development, yet observing it has a price.
+            A tool can receive data only by joining the DDS domain as a subscriber that
             discovery has matched to the publisher, so the act of observing folds the tool into the system it measures
             and perturbs it.
           </p>
@@ -1151,7 +1158,7 @@
           </p>
           <p>
             Across three hardware platforms (laptop, Jetson, and Raspberry Pi), two DDS implementations, and seven
-            robot-operation workloads (DDS-focused evaluation), ros2probe holds the discovery graph within 0.5% of an unobserved system, whereas
+            robot-operation workloads, ros2probe holds the discovery graph within 0.5% of an unobserved system, whereas
             domain-joining tools inflate discovery up to 2.6&times; and drop 38.5% of the subscriber's messages at
             saturation while ros2probe drops none. It reports loss with a recall of 1.0, cuts observer CPU and memory by
             up to 7&times; and 28&times;, and stays practical on the embedded robots where existing tools overload the
@@ -1194,7 +1201,7 @@
         <div class="contrib">
           <span class="tag">C4</span>
           <h3>Adaptive Visibility</h3>
-          <p>The main observer stays zero-participant. SHM-only topics become visible on demand: ros2probe launches a short-lived subprocess inside an isolated mount namespace, and only that subprocess joins the selected middleware domain. The runtime itself never registers as a middleware participant.</p>
+          <p>SHM-only topics become visible on demand through a namespace-isolated DDS helper with SHM disabled.</p>
         </div>
       </div>
     </div>
